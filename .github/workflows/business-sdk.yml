@@ -1,0 +1,72 @@
+name: 'Business SDK'
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  verify:
+    name: 'Verify SDK & OpenAPI artifact'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify Business SDK
+        run: bun run lint && bun run format:check && bun run check-generated && bun run typecheck && bun test
+
+  publish:
+    name: 'Publish @orvelt/business to npm'
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify release tag matches package version
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION="$(node --input-type=module -e "import packageJson from './package.json' with { type: 'json' }; console.log(packageJson.version)")"
+
+          if [[ "$TAG_VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($PACKAGE_VERSION)."
+            exit 1
+          fi
+
+      - name: Build publishable package
+        run: bun run build
+
+      - name: Inspect package contents
+        run: npm pack --dry-run --ignore-scripts
+
+      - name: Publish with npm trusted publishing
+        run: npm publish --access public --ignore-scripts

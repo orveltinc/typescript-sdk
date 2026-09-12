@@ -1,0 +1,8 @@
+dist/
+node_modules/
+
+# These files belong to the parent monorepo and are intentionally not part of
+# the standalone SDK repository.
+moon.yml
+scripts/generate-openapi.ts
+test/unit/generate-openapi.test.ts
