@@ -18,6 +18,12 @@ workspace:
 
 toolchains:
   default: bun
+  javascript:
+    syncProjectWorkspaceDependencies: false
+  typescript:
+    routeOutDirToCache: false
+    syncProjectReferences: false
+    syncProjectReferencesToPaths: false
 
 tasks:
   generate-spec:

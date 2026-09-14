@@ -15,18 +15,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "types": ["bun"],
-    "outDir": "../../.moon/cache/types/packages/business-sdk",
-    "paths": {
-      "@pointsy/business-contract": ["../business-contract/src/index.ts"],
-      "@pointsy/business-contract/*": ["../business-contract/src/*"]
-    }
+    "types": ["bun"]
   },
   "include": ["openapi-ts.config.ts", "scripts/check-generated.ts", "src/**/*", "test/**/*"],
-  "exclude": ["dist", "node_modules"],
-  "references": [
-    {
-      "path": "../business-contract"
-    }
-  ]
+  "exclude": ["dist", "node_modules"]
 }
