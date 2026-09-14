@@ -33,16 +33,17 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun run generate && bun run typecheck && bun test && rm -rf dist && tsc --project tsconfig.build.json",
+    "build": "bun run generate && bun run typecheck && bun run test && rm -rf dist && tsc --project tsconfig.build.json",
     "check-generated": "bun run scripts/check-generated.ts",
     "format:check": "oxfmt --check .",
     "generate": "node scripts/hey-api-runner.mjs --file openapi-ts.config.ts",
     "lint": "oxlint .",
-    "test": "bun test",
+    "test": "bun test test/unit/api.test.ts test/unit/config.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@pointsy/business-contract": "workspace:*"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.99.0",

@@ -1,0 +1,105 @@
+project:
+  title: 'Business SDK'
+  description: 'Generated TypeScript SDK and curated OpenAPI document for external Business API clients.'
+
+dependsOn:
+  - business-contract
+
+tags:
+  - testable
+
+language: typescript
+stack: backend
+
+workspace:
+  inheritedTasks:
+    exclude:
+      - env
+
+toolchains:
+  default: bun
+
+tasks:
+  generate-spec:
+    description: 'Generate the curated OpenAPI document.'
+    command: bun run scripts/generate-openapi.ts
+    inputs:
+      - package.json
+      - scripts/generate-openapi.ts
+      - src/constants.ts
+      - /packages/business-contract/src/**/*
+    outputs:
+      - openapi.json
+    options:
+      cache: false
+    toolchains: bun
+
+  generate-sdk:
+    description: 'Generate the Hey API SDK from the curated OpenAPI document.'
+    command: node scripts/hey-api-runner.mjs --file openapi-ts.config.ts
+    deps:
+      - ~:generate-spec
+    inputs:
+      - openapi-ts.config.ts
+      - openapi.json
+      - scripts/hey-api-runner.mjs
+    outputs:
+      - src/generated/**/*
+    options:
+      cache: false
+    toolchains: bun
+
+  generate:
+    description: 'Generate the curated OpenAPI document and Hey API SDK.'
+    deps:
+      - ~:generate-sdk
+    inputs:
+      - openapi-ts.config.ts
+      - package.json
+      - scripts/generate-openapi.ts
+      - src/constants.ts
+      - /packages/business-contract/src/**/*
+    outputs:
+      - openapi.json
+      - src/generated/**/*
+    options:
+      cache: false
+    toolchains: bun
+
+  check-generated:
+    description: 'Verify the committed OpenAPI document and SDK are current.'
+    command: bun run scripts/check-generated.ts
+    inputs:
+      - openapi-ts.config.ts
+      - openapi.json
+      - package.json
+      - scripts/**/*
+      - src/constants.ts
+      - src/generated/**/*
+      - /packages/business-contract/src/**/*
+    toolchains: bun
+
+  build:
+    description: 'Regenerate and compile the publishable ESM package.'
+    script: rm -rf dist && tsc --project tsconfig.build.json
+    deps:
+      - ~:generate
+      - ~:typecheck
+      - ~:test
+    inputs:
+      - openapi-ts.config.ts
+      - package.json
+      - scripts/**/*
+      - src/**/*
+      - tsconfig.build.json
+      - tsconfig.json
+      - /packages/business-contract/src/**/*
+    outputs:
+      - dist/**/*
+      - openapi.json
+      - src/generated/**/*
+    options:
+      cache: false
+    toolchains: bun
+
+layer: library

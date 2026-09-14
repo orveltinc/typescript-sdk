@@ -32,7 +32,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Verify Business SDK
-        run: bun run lint && bun run format:check && bun run check-generated && bun run typecheck && bun test
+        run: bun run lint && bun run format:check && bun run check-generated && bun run typecheck && bun run test
 
   publish:
     name: 'Publish @orvelt/business to npm'
