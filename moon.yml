@@ -4,6 +4,7 @@ project:
 
 dependsOn:
   - business-contract
+  - storefront-contract
 
 tags:
   - testable
@@ -20,12 +21,40 @@ toolchains:
   default: bun
   javascript:
     syncProjectWorkspaceDependencies: false
-  typescript:
-    routeOutDirToCache: false
-    syncProjectReferences: false
-    syncProjectReferencesToPaths: false
+  # This publishable SDK has its own standalone TypeScript build, not workspace references.
+  typescript: false
 
 tasks:
+  pack:
+    description: 'Pack the SDK artifact used by browser checks and npm publishing.'
+    script: mkdir -p test/results && proto run bun -- pm pack --ignore-scripts --filename "$PWD/test/results/orvelt-business.tgz"
+    deps:
+      - ~:build
+    outputs:
+      - test/results/orvelt-business.tgz
+    options:
+      cache: false
+    toolchains: bun
+
+  test-e2e:
+    description: 'Install and exercise the packed SDK in a browser without workspace dependencies.'
+    command: bun run test-e2e
+    deps:
+      - ~:pack
+    options:
+      mergeDeps: replace
+      mergeArgs: replace
+      cache: false
+      envFile: null
+    toolchains: bun
+
+  typecheck:
+    description: 'Check the standalone SDK without emitting declaration files into source.'
+    command: tsc --noEmit --project tsconfig.json
+    options:
+      mergeArgs: replace
+    toolchains: bun
+
   generate-spec:
     description: 'Generate the curated OpenAPI document.'
     command: bun run scripts/generate-openapi.ts
@@ -34,6 +63,8 @@ tasks:
       - scripts/generate-openapi.ts
       - src/constants.ts
       - /packages/business-contract/src/**/*
+      - /packages/storefront-contract/src/**/*
+      - /packages/events/src/**/*
     outputs:
       - openapi.json
     options:
@@ -49,11 +80,16 @@ tasks:
       - openapi-ts.config.ts
       - openapi.json
       - scripts/hey-api-runner.mjs
+      - scripts/hey-api-typescript-loader.mjs
+      - scripts/typescript-legacy-shim.mjs
+      - scripts/fix-generated-headers.ts
     outputs:
       - src/generated/**/*
     options:
       cache: false
-    toolchains: bun
+    toolchains:
+      - bun
+      - node
 
   generate:
     description: 'Generate the curated OpenAPI document and Hey API SDK.'
@@ -62,9 +98,11 @@ tasks:
     inputs:
       - openapi-ts.config.ts
       - package.json
-      - scripts/generate-openapi.ts
+      - scripts/**/*
       - src/constants.ts
       - /packages/business-contract/src/**/*
+      - /packages/storefront-contract/src/**/*
+      - /packages/events/src/**/*
     outputs:
       - openapi.json
       - src/generated/**/*
@@ -82,16 +120,17 @@ tasks:
       - scripts/**/*
       - src/constants.ts
       - src/generated/**/*
+      - /packages/storefront-contract/src/**/*
       - /packages/business-contract/src/**/*
+      - /packages/events/src/**/*
     toolchains: bun
 
   build:
     description: 'Regenerate and compile the publishable ESM package.'
-    script: rm -rf dist && tsc --project tsconfig.build.json
+    # Run typechecking after generation, not as a parallel dependency while output is replaced.
+    script: bun run typecheck && rm -rf dist && tsc --project tsconfig.build.json && bun scripts/build-browser.ts
     deps:
       - ~:generate
-      - ~:typecheck
-      - ~:test
     inputs:
       - openapi-ts.config.ts
       - package.json
@@ -99,7 +138,9 @@ tasks:
       - src/**/*
       - tsconfig.build.json
       - tsconfig.json
+      - /packages/storefront-contract/src/**/*
       - /packages/business-contract/src/**/*
+      - /packages/events/src/**/*
     outputs:
       - dist/**/*
       - openapi.json

@@ -9,5 +9,5 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "sortPackageJson": false,
-  "ignorePatterns": ["dist/", "node_modules/", "openapi.json"]
+  "ignorePatterns": ["dist/", "node_modules/", "openapi.json", "test/results/", "test/report/"]
 }

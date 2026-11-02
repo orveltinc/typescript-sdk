@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { delimiter } from 'node:path';
@@ -5,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 
 const packageRoot = new URL('../', import.meta.url);
 const generatedDirectory = new URL('../src/generated/', import.meta.url);
+const hasMonorepoContracts = existsSync(
+  new URL('../../business-contract/src/index.ts', import.meta.url),
+);
 
 async function listFiles(root: string, directory = root): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -17,7 +21,7 @@ async function listFiles(root: string, directory = root): Promise<string[]> {
   return files.flat().toSorted();
 }
 
-async function compareDirectories(expectedDirectory: string, actualDirectory: string) {
+export async function compareDirectories(expectedDirectory: string, actualDirectory: string) {
   const [expectedFiles, actualFiles] = await Promise.all([
     listFiles(expectedDirectory),
     listFiles(actualDirectory),
@@ -44,6 +48,17 @@ async function compareDirectories(expectedDirectory: string, actualDirectory: st
 
 async function checkGeneratedArtifacts() {
   const differences: string[] = [];
+  // The standalone SDK repository regenerates from its committed OpenAPI document.
+  // In the monorepo, also check that document against the live public contracts.
+  if (hasMonorepoContracts) {
+    const { generateBusinessOpenApiDocument, serializeOpenApiDocument } =
+      // Keep this import opaque to tsc: standalone SDK checkouts have no monorepo contracts.
+      await import(new URL('./generate-openapi.ts', import.meta.url).href);
+    const expected = serializeOpenApiDocument(await generateBusinessOpenApiDocument());
+    const actual = await readFile(new URL('../openapi.json', import.meta.url), 'utf8');
+    if (actual !== expected)
+      differences.push('openapi.json differs from the current public contracts');
+  }
   const temporaryDirectory = await mkdtemp(join(fileURLToPath(packageRoot), 'generated-check-'));
   try {
     const result = Bun.spawnSync({
@@ -62,7 +77,7 @@ async function checkGeneratedArtifacts() {
     }
 
     differences.push(
-      ...(await compareDirectories(fileURLToPath(generatedDirectory), temporaryDirectory)),
+      ...(await compareDirectories(temporaryDirectory, fileURLToPath(generatedDirectory))),
     );
   } finally {
     await rm(temporaryDirectory, { force: true, recursive: true });
@@ -70,11 +85,13 @@ async function checkGeneratedArtifacts() {
 
   if (differences.length) {
     throw new Error(
-      `Business SDK artifacts are stale:\n- ${differences.join('\n- ')}\nRun "bun run --cwd ${fileURLToPath(packageRoot)} generate".`,
+      `Business SDK artifacts are stale:\n- ${differences.join('\n- ')}\nRun "${hasMonorepoContracts ? 'moon run business-sdk:generate' : `bun run --cwd ${fileURLToPath(packageRoot)} generate`}".`,
     );
   }
 
   console.log('The committed Business SDK is current with openapi.json.');
 }
 
-await checkGeneratedArtifacts();
+if (import.meta.main) {
+  await checkGeneratedArtifacts();
+}

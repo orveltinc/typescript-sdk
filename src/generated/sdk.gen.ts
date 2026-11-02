@@ -12,34 +12,16 @@ import {
 import type {
   AnswersListErrors,
   AnswersListResponses,
-  GoalsCreateErrors,
-  GoalsCreateResponses,
-  GoalsDeleteErrors,
-  GoalsDeleteResponses,
-  GoalsListErrors,
-  GoalsListResponses,
-  GoalsUpdateErrors,
-  GoalsUpdateResponses,
-  KbAddItemErrors,
-  KbAddItemResponses,
-  KbDeleteItemErrors,
-  KbDeleteItemResponses,
-  KbGetErrors,
-  KbGetResponses,
-  KbUpdateItemErrors,
-  KbUpdateItemResponses,
+  LinkCreateErrors,
+  LinkCreateResponses,
+  LinkListErrors,
+  LinkListResponses,
+  LinkResendErrors,
+  LinkResendResponses,
   OpinionsListErrors,
   OpinionsListResponses,
-  OpinionsRespondErrors,
-  OpinionsRespondResponses,
-  PlatformGoalsGetErrors,
-  PlatformGoalsGetResponses,
-  PlatformGoalsUpdateErrors,
-  PlatformGoalsUpdateResponses,
-  PreverificationCreateLinkErrors,
-  PreverificationCreateLinkResponses,
-  PreverificationListErrors,
-  PreverificationListResponses,
+  QrDisplayErrors,
+  QrDisplayResponses,
   QuestionsCreateErrors,
   QuestionsCreateResponses,
   QuestionsDeleteErrors,
@@ -48,39 +30,24 @@ import type {
   QuestionsListResponses,
   QuestionsUpdateErrors,
   QuestionsUpdateResponses,
-  SubscribersBlockErrors,
-  SubscribersBlockResponses,
-  SubscribersListErrors,
-  SubscribersListResponses,
-  WebhooksPortalErrors,
-  WebhooksPortalResponses,
-  WebhooksUpsertDestinationErrors,
-  WebhooksUpsertDestinationResponses,
+  SubscribersCountErrors,
+  SubscribersCountResponses,
+  SubscribersInviteErrors,
+  SubscribersInviteResponses,
 } from './types.gen.js';
 import {
   zAnswersListResponse,
-  zGoalsCreateResponse,
-  zGoalsDeleteResponse,
-  zGoalsListResponse,
-  zGoalsUpdateResponse,
-  zKbAddItemResponse,
-  zKbDeleteItemResponse,
-  zKbGetResponse,
-  zKbUpdateItemResponse,
+  zLinkCreateResponse,
+  zLinkListResponse,
+  zLinkResendResponse,
   zOpinionsListResponse,
-  zOpinionsRespondResponse,
-  zPlatformGoalsGetResponse,
-  zPlatformGoalsUpdateResponse,
-  zPreverificationCreateLinkResponse,
-  zPreverificationListResponse,
+  zQrDisplayResponse,
   zQuestionsCreateResponse,
   zQuestionsDeleteResponse,
   zQuestionsListResponse,
   zQuestionsUpdateResponse,
-  zSubscribersBlockResponse,
-  zSubscribersListResponse,
-  zWebhooksPortalResponse,
-  zWebhooksUpsertDestinationResponse,
+  zSubscribersCountResponse,
+  zSubscribersInviteResponse,
 } from './zod.gen.js';
 
 export type Options<
@@ -101,128 +68,11 @@ export type Options<
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const goalsList = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    page?: number;
-    limit?: number;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<GoalsListResponses, GoalsListErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'query', key: 'page' },
-          { in: 'query', key: 'limit' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).get<GoalsListResponses, GoalsListErrors, ThrowOnError>({
-    responseValidator: async (data) => await zGoalsListResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/goals',
-    ...options,
-    ...params,
-  });
-};
-
-export const goalsCreate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    goal: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<GoalsCreateResponses, GoalsCreateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'body', key: 'goal' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).post<GoalsCreateResponses, GoalsCreateErrors, ThrowOnError>({
-    responseValidator: async (data) => await zGoalsCreateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/goals',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-      ...params.headers,
-    },
-  });
-};
-
-export const goalsDelete = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    goalId: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<GoalsDeleteResponses, GoalsDeleteErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'goalId' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).delete<GoalsDeleteResponses, GoalsDeleteErrors, ThrowOnError>({
-    responseValidator: async (data) => await zGoalsDeleteResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/goals/{goalId}',
-    ...options,
-    ...params,
-  });
-};
-
-export const goalsUpdate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    goalId: string;
-    goal: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<GoalsUpdateResponses, GoalsUpdateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'goalId' },
-          { in: 'body', key: 'goal' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).patch<GoalsUpdateResponses, GoalsUpdateErrors, ThrowOnError>({
-    responseValidator: async (data) => await zGoalsUpdateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/goals/{goalId}',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-      ...params.headers,
-    },
-  });
-};
-
+/**
+ * List questions
+ *
+ * List a project's guided questions.
+ */
 export const questionsList = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
@@ -241,10 +91,15 @@ export const questionsList = <ThrowOnError extends boolean = false>(
   );
 };
 
+/**
+ * Create a question
+ *
+ * Add a guided question to a project.
+ */
 export const questionsCreate = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
-    tags: Array<
+    tags?: Array<
       | 'Trust'
       | 'Reliability'
       | 'Experience'
@@ -254,10 +109,25 @@ export const questionsCreate = <ThrowOnError extends boolean = false>(
       | 'Identity'
       | 'Outcome'
     >;
+    isAutoTags?: boolean;
     priority: number;
+    isAutoPriority: boolean;
     question: string;
-    options: Array<string> | null;
     answerMode: 'text_only' | 'single_select' | 'multi_select';
+    answers?: {
+      options?: Array<{
+        id: string;
+        option: string;
+        description?: string;
+      }>;
+      allowOther?: boolean;
+      skippable?: boolean;
+      layout?: 'inline' | 'stacked';
+      chipPosition?: 'left' | 'right';
+      otherPlaceholder?: string;
+      freeTextPlaceholder?: string;
+      freeTextMultiline?: boolean;
+    };
     status: 'active' | 'archived';
     responseVisibility: 'default' | 'private';
   },
@@ -270,10 +140,12 @@ export const questionsCreate = <ThrowOnError extends boolean = false>(
         args: [
           { in: 'path', key: 'projectId' },
           { in: 'body', key: 'tags' },
+          { in: 'body', key: 'isAutoTags' },
           { in: 'body', key: 'priority' },
+          { in: 'body', key: 'isAutoPriority' },
           { in: 'body', key: 'question' },
-          { in: 'body', key: 'options' },
           { in: 'body', key: 'answerMode' },
+          { in: 'body', key: 'answers' },
           { in: 'body', key: 'status' },
           { in: 'body', key: 'responseVisibility' },
         ],
@@ -292,12 +164,19 @@ export const questionsCreate = <ThrowOnError extends boolean = false>(
     ...params,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+        ? Object.fromEntries(new Headers(options.headers))
+        : options?.headers),
       ...params.headers,
     },
   });
 };
 
+/**
+ * Delete a question
+ *
+ * Remove a question from a project.
+ */
 export const questionsDelete = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
@@ -329,6 +208,11 @@ export const questionsDelete = <ThrowOnError extends boolean = false>(
   });
 };
 
+/**
+ * Update a question
+ *
+ * Edit, activate, or archive a project question.
+ */
 export const questionsUpdate = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
@@ -343,12 +227,26 @@ export const questionsUpdate = <ThrowOnError extends boolean = false>(
       | 'Identity'
       | 'Outcome'
     >;
+    isAutoTags?: boolean;
     priority?: number;
+    isAutoPriority?: boolean;
     question?: string;
-    options?: Array<string> | null;
     answerMode?: 'text_only' | 'single_select' | 'multi_select';
+    answers?: {
+      options?: Array<{
+        id: string;
+        option: string;
+        description?: string;
+      }>;
+      allowOther?: boolean;
+      skippable?: boolean;
+      layout?: 'inline' | 'stacked';
+      chipPosition?: 'left' | 'right';
+      otherPlaceholder?: string;
+      freeTextPlaceholder?: string;
+      freeTextMultiline?: boolean;
+    };
     status?: 'active' | 'archived';
-    responseVisibility?: 'default' | 'private';
   },
   options?: Options<never, ThrowOnError>,
 ): RequestResult<QuestionsUpdateResponses, QuestionsUpdateErrors, ThrowOnError> => {
@@ -360,12 +258,13 @@ export const questionsUpdate = <ThrowOnError extends boolean = false>(
           { in: 'path', key: 'projectId' },
           { in: 'path', key: 'questionId' },
           { in: 'body', key: 'tags' },
+          { in: 'body', key: 'isAutoTags' },
           { in: 'body', key: 'priority' },
+          { in: 'body', key: 'isAutoPriority' },
           { in: 'body', key: 'question' },
-          { in: 'body', key: 'options' },
           { in: 'body', key: 'answerMode' },
+          { in: 'body', key: 'answers' },
           { in: 'body', key: 'status' },
-          { in: 'body', key: 'responseVisibility' },
         ],
       },
     ],
@@ -382,80 +281,20 @@ export const questionsUpdate = <ThrowOnError extends boolean = false>(
     ...params,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+        ? Object.fromEntries(new Headers(options.headers))
+        : options?.headers),
       ...params.headers,
     },
   });
 };
 
-export const platformGoalsGet = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<PlatformGoalsGetResponses, PlatformGoalsGetErrors, ThrowOnError> => {
-  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
-  return (options?.client ?? client).get<
-    PlatformGoalsGetResponses,
-    PlatformGoalsGetErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zPlatformGoalsGetResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/platform-goals',
-    ...options,
-    ...params,
-  });
-};
-
-export const platformGoalsUpdate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    platformGoals: Array<{
-      id:
-        | 'trust'
-        | 'reliability'
-        | 'experience'
-        | 'safety'
-        | 'personalization'
-        | 'fairness'
-        | 'identity'
-        | 'outcome';
-      position: number;
-    }>;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<PlatformGoalsUpdateResponses, PlatformGoalsUpdateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'body', key: 'platformGoals' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).patch<
-    PlatformGoalsUpdateResponses,
-    PlatformGoalsUpdateErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zPlatformGoalsUpdateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/platform-goals',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-      ...params.headers,
-    },
-  });
-};
-
-export const preverificationList = <ThrowOnError extends boolean = false>(
+/**
+ * List delivery links
+ *
+ * List a project's delivery links and their status.
+ */
+export const linkList = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
     page?: number;
@@ -465,7 +304,7 @@ export const preverificationList = <ThrowOnError extends boolean = false>(
     status?: 'all' | 'issued' | 'clicked' | 'submitted' | 'expired';
   },
   options?: Options<never, ThrowOnError>,
-): RequestResult<PreverificationListResponses, PreverificationListErrors, ThrowOnError> => {
+): RequestResult<LinkListResponses, LinkListErrors, ThrowOnError> => {
   const params = buildClientParams(
     [parameters],
     [
@@ -481,60 +320,31 @@ export const preverificationList = <ThrowOnError extends boolean = false>(
       },
     ],
   );
-  return (options?.client ?? client).get<
-    PreverificationListResponses,
-    PreverificationListErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zPreverificationListResponse.parseAsync(data),
+  return (options?.client ?? client).get<LinkListResponses, LinkListErrors, ThrowOnError>({
+    responseValidator: async (data) => await zLinkListResponse.parseAsync(data),
     security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/preverified-links',
+    url: '/project/{projectId}/link',
     ...options,
     ...params,
   });
 };
 
-export const preverificationCreateLink = <ThrowOnError extends boolean = false>(
+/**
+ * Create a delivery link
+ *
+ * Create a pre-verified opinion link for one customer and optionally email it. Each project can email the same customer once every 48 hours.
+ */
+export const linkCreate = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
     customerEmail: string;
+    customerFirstName: string;
+    customerLastName?: string;
     customerReference?: string;
-    validityMinutes?: number;
-    metadata?: {
-      [key: string]:
-        | string
-        | number
-        | boolean
-        | null
-        | Array<
-            | string
-            | number
-            | boolean
-            | null
-            | Array<unknown>
-            | {
-                [key: string]: unknown;
-              }
-          >
-        | {
-            [key: string]:
-              | string
-              | number
-              | boolean
-              | null
-              | Array<unknown>
-              | {
-                  [key: string]: unknown;
-                };
-          };
-    };
+    sendEmail?: boolean;
   },
   options?: Options<never, ThrowOnError>,
-): RequestResult<
-  PreverificationCreateLinkResponses,
-  PreverificationCreateLinkErrors,
-  ThrowOnError
-> => {
+): RequestResult<LinkCreateResponses, LinkCreateErrors, ThrowOnError> => {
   const params = buildClientParams(
     [parameters],
     [
@@ -542,31 +352,88 @@ export const preverificationCreateLink = <ThrowOnError extends boolean = false>(
         args: [
           { in: 'path', key: 'projectId' },
           { in: 'body', key: 'customerEmail' },
+          { in: 'body', key: 'customerFirstName' },
+          { in: 'body', key: 'customerLastName' },
           { in: 'body', key: 'customerReference' },
-          { in: 'body', key: 'validityMinutes' },
-          { in: 'body', key: 'metadata' },
+          { in: 'body', key: 'sendEmail' },
         ],
       },
     ],
   );
-  return (options?.client ?? client).post<
-    PreverificationCreateLinkResponses,
-    PreverificationCreateLinkErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zPreverificationCreateLinkResponse.parseAsync(data),
+  return (options?.client ?? client).post<LinkCreateResponses, LinkCreateErrors, ThrowOnError>({
+    responseValidator: async (data) => await zLinkCreateResponse.parseAsync(data),
     security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/preverified-links',
+    url: '/project/{projectId}/link',
     ...options,
     ...params,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+        ? Object.fromEntries(new Headers(options.headers))
+        : options?.headers),
       ...params.headers,
     },
   });
 };
 
+/**
+ * Resend a delivery link
+ *
+ * Email an existing, unexpired delivery link to its customer again. The 48-hour email cooldown applies.
+ */
+export const linkResend = <ThrowOnError extends boolean = false>(
+  parameters: {
+    projectId: string;
+    id: string;
+  },
+  options?: Options<never, ThrowOnError>,
+): RequestResult<LinkResendResponses, LinkResendErrors, ThrowOnError> => {
+  const params = buildClientParams(
+    [parameters],
+    [
+      {
+        args: [
+          { in: 'path', key: 'projectId' },
+          { in: 'path', key: 'id' },
+        ],
+      },
+    ],
+  );
+  return (options?.client ?? client).post<LinkResendResponses, LinkResendErrors, ThrowOnError>({
+    responseValidator: async (data) => await zLinkResendResponse.parseAsync(data),
+    security: [{ name: 'x-api-key', type: 'apiKey' }],
+    url: '/project/{projectId}/link/{id}/resend',
+    ...options,
+    ...params,
+  });
+};
+
+/**
+ * Display a rotating QR code
+ *
+ * Get the current link for the project's rotating QR code. Fetch it again when `validUntil` passes.
+ */
+export const qrDisplay = <ThrowOnError extends boolean = false>(
+  parameters: {
+    projectId: string;
+  },
+  options?: Options<never, ThrowOnError>,
+): RequestResult<QrDisplayResponses, QrDisplayErrors, ThrowOnError> => {
+  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
+  return (options?.client ?? client).post<QrDisplayResponses, QrDisplayErrors, ThrowOnError>({
+    responseValidator: async (data) => await zQrDisplayResponse.parseAsync(data),
+    security: [{ name: 'x-api-key', type: 'apiKey' }],
+    url: '/project/{projectId}/qr/display',
+    ...options,
+    ...params,
+  });
+};
+
+/**
+ * List opinions
+ *
+ * List a project's opinions with search, reply-status, and date filters.
+ */
 export const opinionsList = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
@@ -576,7 +443,10 @@ export const opinionsList = <ThrowOnError extends boolean = false>(
     query?: string;
     dateFrom?: number;
     dateTo?: number;
-    responseStatus?: 'all' | 'responded' | 'unresponded';
+    externalUserId?: string;
+    opinionId?: string;
+    visibility?: 'all' | 'public' | 'private';
+    replyStatus?: 'all' | 'replied' | 'unreplied';
   },
   options?: Options<never, ThrowOnError>,
 ): RequestResult<OpinionsListResponses, OpinionsListErrors, ThrowOnError> => {
@@ -592,7 +462,10 @@ export const opinionsList = <ThrowOnError extends boolean = false>(
           { in: 'query', key: 'query' },
           { in: 'query', key: 'dateFrom' },
           { in: 'query', key: 'dateTo' },
-          { in: 'query', key: 'responseStatus' },
+          { in: 'query', key: 'externalUserId' },
+          { in: 'query', key: 'opinionId' },
+          { in: 'query', key: 'visibility' },
+          { in: 'query', key: 'replyStatus' },
         ],
       },
     ],
@@ -606,44 +479,11 @@ export const opinionsList = <ThrowOnError extends boolean = false>(
   });
 };
 
-export const opinionsRespond = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    id: string;
-    content: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<OpinionsRespondResponses, OpinionsRespondErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'id' },
-          { in: 'body', key: 'content' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).post<
-    OpinionsRespondResponses,
-    OpinionsRespondErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zOpinionsRespondResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/opinions/{id}/responses',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-      ...params.headers,
-    },
-  });
-};
-
+/**
+ * List answers
+ *
+ * List customers' answers to a project's questions.
+ */
 export const answersList = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
@@ -653,7 +493,8 @@ export const answersList = <ThrowOnError extends boolean = false>(
     query?: string;
     dateFrom?: number;
     dateTo?: number;
-    reviewId?: string;
+    externalUserId?: string;
+    responseId?: string;
     questionId?: string;
     responseVisibility?: 'all' | 'default' | 'private';
   },
@@ -671,7 +512,8 @@ export const answersList = <ThrowOnError extends boolean = false>(
           { in: 'query', key: 'query' },
           { in: 'query', key: 'dateFrom' },
           { in: 'query', key: 'dateTo' },
-          { in: 'query', key: 'reviewId' },
+          { in: 'query', key: 'externalUserId' },
+          { in: 'query', key: 'responseId' },
           { in: 'query', key: 'questionId' },
           { in: 'query', key: 'responseVisibility' },
         ],
@@ -687,232 +529,72 @@ export const answersList = <ThrowOnError extends boolean = false>(
   });
 };
 
-export const subscribersList = <ThrowOnError extends boolean = false>(
+/**
+ * Count subscribers
+ *
+ * Count a project's subscribers.
+ */
+export const subscribersCount = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
-    page?: number;
-    limit?: number;
-    query?: string;
   },
   options?: Options<never, ThrowOnError>,
-): RequestResult<SubscribersListResponses, SubscribersListErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'query', key: 'page' },
-          { in: 'query', key: 'limit' },
-          { in: 'query', key: 'query' },
-        ],
-      },
-    ],
-  );
+): RequestResult<SubscribersCountResponses, SubscribersCountErrors, ThrowOnError> => {
+  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
   return (options?.client ?? client).get<
-    SubscribersListResponses,
-    SubscribersListErrors,
+    SubscribersCountResponses,
+    SubscribersCountErrors,
     ThrowOnError
   >({
-    responseValidator: async (data) => await zSubscribersListResponse.parseAsync(data),
+    responseValidator: async (data) => await zSubscribersCountResponse.parseAsync(data),
     security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/subscribers',
+    url: '/project/{projectId}/subscribers/count',
     ...options,
     ...params,
   });
 };
 
-export const subscribersBlock = <ThrowOnError extends boolean = false>(
+/**
+ * Invite subscribers
+ *
+ * Email invitations to subscribe to a project.
+ */
+export const subscribersInvite = <ThrowOnError extends boolean = false>(
   parameters: {
     projectId: string;
-    id: string;
+    subscribers: Array<{
+      name: string;
+      email: string;
+    }>;
   },
   options?: Options<never, ThrowOnError>,
-): RequestResult<SubscribersBlockResponses, SubscribersBlockErrors, ThrowOnError> => {
+): RequestResult<SubscribersInviteResponses, SubscribersInviteErrors, ThrowOnError> => {
   const params = buildClientParams(
     [parameters],
     [
       {
         args: [
           { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'id' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).delete<
-    SubscribersBlockResponses,
-    SubscribersBlockErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zSubscribersBlockResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/subscribers/{id}',
-    ...options,
-    ...params,
-  });
-};
-
-export const kbGet = <ThrowOnError extends boolean = false>(
-  options?: Options<never, ThrowOnError>,
-): RequestResult<KbGetResponses, KbGetErrors, ThrowOnError> =>
-  (options?.client ?? client).get<KbGetResponses, KbGetErrors, ThrowOnError>({
-    responseValidator: async (data) => await zKbGetResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/kb',
-    ...options,
-  });
-
-export const kbAddItem = <ThrowOnError extends boolean = false>(
-  parameters?: {
-    url?: string;
-    text?: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<KbAddItemResponses, KbAddItemErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'body', key: 'url' },
-          { in: 'body', key: 'text' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).post<KbAddItemResponses, KbAddItemErrors, ThrowOnError>({
-    responseValidator: async (data) => await zKbAddItemResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/kb',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-      ...params.headers,
-    },
-  });
-};
-
-export const kbDeleteItem = <ThrowOnError extends boolean = false>(
-  parameters: {
-    id: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<KbDeleteItemResponses, KbDeleteItemErrors, ThrowOnError> => {
-  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'id' }] }]);
-  return (options?.client ?? client).delete<
-    KbDeleteItemResponses,
-    KbDeleteItemErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zKbDeleteItemResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/kb/{id}',
-    ...options,
-    ...params,
-  });
-};
-
-export const kbUpdateItem = <ThrowOnError extends boolean = false>(
-  parameters: {
-    id: string;
-    url?: string;
-    text?: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<KbUpdateItemResponses, KbUpdateItemErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'id' },
-          { in: 'body', key: 'url' },
-          { in: 'body', key: 'text' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).patch<KbUpdateItemResponses, KbUpdateItemErrors, ThrowOnError>(
-    {
-      responseValidator: async (data) => await zKbUpdateItemResponse.parseAsync(data),
-      security: [{ name: 'x-api-key', type: 'apiKey' }],
-      url: '/kb/{id}',
-      ...options,
-      ...params,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-        ...params.headers,
-      },
-    },
-  );
-};
-
-export const webhooksPortal = <ThrowOnError extends boolean = false>(
-  parameters?: {
-    theme?: 'light' | 'dark';
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<WebhooksPortalResponses, WebhooksPortalErrors, ThrowOnError> => {
-  const params = buildClientParams([parameters], [{ args: [{ in: 'body', key: 'theme' }] }]);
-  return (options?.client ?? client).post<
-    WebhooksPortalResponses,
-    WebhooksPortalErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zWebhooksPortalResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/webhooks/portal',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-      ...params.headers,
-    },
-  });
-};
-
-export const webhooksUpsertDestination = <ThrowOnError extends boolean = false>(
-  parameters: {
-    url: string;
-    topics?: Array<'review.opinion.received' | 'review.answer.received'>;
-    destinationId?: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<
-  WebhooksUpsertDestinationResponses,
-  WebhooksUpsertDestinationErrors,
-  ThrowOnError
-> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'body', key: 'url' },
-          { in: 'body', key: 'topics' },
-          { in: 'body', key: 'destinationId' },
+          { in: 'body', key: 'subscribers' },
         ],
       },
     ],
   );
   return (options?.client ?? client).post<
-    WebhooksUpsertDestinationResponses,
-    WebhooksUpsertDestinationErrors,
+    SubscribersInviteResponses,
+    SubscribersInviteErrors,
     ThrowOnError
   >({
-    responseValidator: async (data) => await zWebhooksUpsertDestinationResponse.parseAsync(data),
+    responseValidator: async (data) => await zSubscribersInviteResponse.parseAsync(data),
     security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/webhooks/destinations',
+    url: '/project/{projectId}/subscribers/invite',
     ...options,
     ...params,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+        ? Object.fromEntries(new Headers(options.headers))
+        : options?.headers),
       ...params.headers,
     },
   });

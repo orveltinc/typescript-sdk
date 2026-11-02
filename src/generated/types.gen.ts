@@ -4,714 +4,150 @@ export type ClientOptions = {
   baseUrl: 'https://api.orvelt.com/v1' | (string & {});
 };
 
-export type GoalsListData = {
-  body?: never;
-  path: {
-    projectId: string;
-  };
-  query?: {
-    page?: number;
-    limit?: number;
-  };
-  url: '/project/{projectId}/goals';
+/**
+ * UndefinedError
+ */
+export type UndefinedError = {
+  defined: false;
+  code: string;
+  message: string;
+  data?: unknown;
 };
 
-export type GoalsListErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+export type UnexpectedHttpError = {
+  defined: false;
+  code: string;
+  status: number;
+  message: string;
+  data?: unknown;
 };
 
-export type GoalsListError = GoalsListErrors[keyof GoalsListErrors];
+export type BadRequestError = {
+  defined: true;
+  code: 'BAD_REQUEST';
+  status: 400;
+  message: string;
+  data?: unknown;
+};
 
-export type GoalsListResponses = {
-  /**
-   * OK
-   */
-  200: {
-    goals: Array<{
-      id: string;
-      projectId: string;
-      goal: string;
-      createdAt: string;
-      updatedAt: string;
-    }>;
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
+export type Http400Error = BadRequestError | UnexpectedHttpError;
+
+export type UnauthorizedError = {
+  defined: true;
+  code: 'UNAUTHORIZED';
+  status: 401;
+  message: string;
+  data?: unknown;
+};
+
+export type Http401Error = UnauthorizedError | UnexpectedHttpError;
+
+export type ForbiddenError = {
+  defined: true;
+  code: 'FORBIDDEN';
+  status: 403;
+  message: string;
+  data?: unknown;
+};
+
+export type PlanLimitReachedError = {
+  defined: true;
+  code: 'PLAN_LIMIT_REACHED';
+  status: 403;
+  message: string;
+  data: {
+    metric:
+      | 'privateAnswersPerOrganizationMonth'
+      | 'preverifiedLinksPerProjectMonth'
+      | 'goalsPerProject'
+      | 'activeQuestionsPerProject'
+      | 'additionalTeamsPerOrganization'
+      | 'membersPerAdditionalTeam'
+      | 'knowledgebaseStorageBytes';
+    currentUsage: number;
+    limit: number;
+    upgradePath: '/billing';
+  };
+};
+
+export type Http403Error = ForbiddenError | PlanLimitReachedError | UnexpectedHttpError;
+
+export type NotFoundError = {
+  defined: true;
+  code: 'NOT_FOUND';
+  status: 404;
+  message: string;
+  data?: unknown;
+};
+
+export type Http404Error = NotFoundError | UnexpectedHttpError;
+
+export type ConflictError = {
+  defined: true;
+  code: 'CONFLICT';
+  status: 409;
+  message: string;
+  data?: unknown;
+};
+
+export type Http409Error = ConflictError | UnexpectedHttpError;
+
+export type TooManyRequestsError = {
+  defined: true;
+  code: 'TOO_MANY_REQUESTS';
+  status: 429;
+  message: string;
+  data?: unknown;
+};
+
+export type LinkEmailCooldownError = {
+  defined: true;
+  code: 'LINK_EMAIL_COOLDOWN';
+  status: 429;
+  message: string;
+  data: {
+    nextEligibleAt: string;
+  };
+};
+
+export type Http429Error = TooManyRequestsError | LinkEmailCooldownError | UnexpectedHttpError;
+
+export type ServiceUnavailableError = {
+  defined: true;
+  code: 'SERVICE_UNAVAILABLE';
+  status: 503;
+  message: string;
+  data?: unknown;
+};
+
+export type Http503Error = ServiceUnavailableError | UnexpectedHttpError;
+
+export type Schema0 =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<Schema0>
+  | {
+      [key: string]: Schema0;
     };
-  };
+
+export type OpinionEmbedConfiguration = {
+  projectId: string;
+  visibility: 'public' | 'private';
+  externalUserId?: string;
+  attributes?: OpinionEmbedSchema0;
 };
 
-export type GoalsListResponse = GoalsListResponses[keyof GoalsListResponses];
-
-export type GoalsCreateData = {
-  body: {
-    goal: string;
-  };
-  path: {
-    projectId: string;
-  };
-  query?: never;
-  url: '/project/{projectId}/goals';
-};
-
-export type GoalsCreateErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type GoalsCreateError = GoalsCreateErrors[keyof GoalsCreateErrors];
-
-export type GoalsCreateResponses = {
-  /**
-   * OK
-   */
-  200: {
-    goal: {
-      id: string;
-      projectId: string;
-      goal: string;
-      createdAt: string;
-      updatedAt: string;
+export type OpinionEmbedSchema0 =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<OpinionEmbedSchema0>
+  | {
+      [key: string]: OpinionEmbedSchema0;
     };
-  };
-};
-
-export type GoalsCreateResponse = GoalsCreateResponses[keyof GoalsCreateResponses];
-
-export type GoalsDeleteData = {
-  body?: never;
-  path: {
-    projectId: string;
-    goalId: string;
-  };
-  query?: never;
-  url: '/project/{projectId}/goals/{goalId}';
-};
-
-export type GoalsDeleteErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type GoalsDeleteError = GoalsDeleteErrors[keyof GoalsDeleteErrors];
-
-export type GoalsDeleteResponses = {
-  /**
-   * OK
-   */
-  200: {
-    success: boolean;
-  };
-};
-
-export type GoalsDeleteResponse = GoalsDeleteResponses[keyof GoalsDeleteResponses];
-
-export type GoalsUpdateData = {
-  body: {
-    goal: string;
-  };
-  path: {
-    projectId: string;
-    goalId: string;
-  };
-  query?: never;
-  url: '/project/{projectId}/goals/{goalId}';
-};
-
-export type GoalsUpdateErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type GoalsUpdateError = GoalsUpdateErrors[keyof GoalsUpdateErrors];
-
-export type GoalsUpdateResponses = {
-  /**
-   * OK
-   */
-  200: {
-    goal: {
-      id: string;
-      projectId: string;
-      goal: string;
-      createdAt: string;
-      updatedAt: string;
-    };
-  };
-};
-
-export type GoalsUpdateResponse = GoalsUpdateResponses[keyof GoalsUpdateResponses];
 
 export type QuestionsListData = {
   body?: never;
@@ -724,149 +160,33 @@ export type QuestionsListData = {
 
 export type QuestionsListErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
 export type QuestionsListError = QuestionsListErrors[keyof QuestionsListErrors];
@@ -879,8 +199,21 @@ export type QuestionsListResponses = {
     questions: Array<{
       id: string;
       question: string;
-      options: Array<string> | null;
       answerMode: 'text_only' | 'single_select' | 'multi_select';
+      answers: {
+        options?: Array<{
+          id: string;
+          option: string;
+          description?: string;
+        }>;
+        allowOther?: boolean;
+        skippable?: boolean;
+        layout?: 'inline' | 'stacked';
+        chipPosition?: 'left' | 'right';
+        otherPlaceholder?: string;
+        freeTextPlaceholder?: string;
+        freeTextMultiline?: boolean;
+      };
       tags: Array<
         | 'Trust'
         | 'Reliability'
@@ -892,6 +225,8 @@ export type QuestionsListResponses = {
         | 'Outcome'
       >;
       priority: number;
+      isAutoPriority: boolean;
+      isAutoTags: boolean;
       status: 'active' | 'archived';
       responseVisibility: 'default' | 'private';
       createdAt: string;
@@ -905,7 +240,7 @@ export type QuestionsListResponse = QuestionsListResponses[keyof QuestionsListRe
 
 export type QuestionsCreateData = {
   body: {
-    tags: Array<
+    tags?: Array<
       | 'Trust'
       | 'Reliability'
       | 'Experience'
@@ -915,11 +250,32 @@ export type QuestionsCreateData = {
       | 'Identity'
       | 'Outcome'
     >;
+    /**
+     * When true, Orvelt chooses the tags from the question and its options whenever they change. Sending `tags` turns it off.
+     */
+    isAutoTags?: boolean;
     priority: number;
+    isAutoPriority: boolean;
     question: string;
-    options: Array<string> | null;
     answerMode: 'text_only' | 'single_select' | 'multi_select';
+    answers?: {
+      options?: Array<{
+        id: string;
+        option: string;
+        description?: string;
+      }>;
+      allowOther?: boolean;
+      skippable?: boolean;
+      layout?: 'inline' | 'stacked';
+      chipPosition?: 'left' | 'right';
+      otherPlaceholder?: string;
+      freeTextPlaceholder?: string;
+      freeTextMultiline?: boolean;
+    };
     status: 'active' | 'archived';
+    /**
+     * Whether answers can appear with the customer’s published opinion. Set when the question is created; it cannot be changed.
+     */
     responseVisibility: 'default' | 'private';
   };
   path: {
@@ -931,149 +287,33 @@ export type QuestionsCreateData = {
 
 export type QuestionsCreateErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
 export type QuestionsCreateError = QuestionsCreateErrors[keyof QuestionsCreateErrors];
@@ -1086,8 +326,21 @@ export type QuestionsCreateResponses = {
     question: {
       id: string;
       question: string;
-      options: Array<string> | null;
       answerMode: 'text_only' | 'single_select' | 'multi_select';
+      answers: {
+        options?: Array<{
+          id: string;
+          option: string;
+          description?: string;
+        }>;
+        allowOther?: boolean;
+        skippable?: boolean;
+        layout?: 'inline' | 'stacked';
+        chipPosition?: 'left' | 'right';
+        otherPlaceholder?: string;
+        freeTextPlaceholder?: string;
+        freeTextMultiline?: boolean;
+      };
       tags: Array<
         | 'Trust'
         | 'Reliability'
@@ -1099,6 +352,8 @@ export type QuestionsCreateResponses = {
         | 'Outcome'
       >;
       priority: number;
+      isAutoPriority: boolean;
+      isAutoTags: boolean;
       status: 'active' | 'archived';
       responseVisibility: 'default' | 'private';
       createdAt: string;
@@ -1120,149 +375,33 @@ export type QuestionsDeleteData = {
 
 export type QuestionsDeleteErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
 export type QuestionsDeleteError = QuestionsDeleteErrors[keyof QuestionsDeleteErrors];
@@ -1290,12 +429,29 @@ export type QuestionsUpdateData = {
       | 'Identity'
       | 'Outcome'
     >;
+    /**
+     * When true, Orvelt chooses the tags from the question and its options whenever they change. Sending `tags` turns it off.
+     */
+    isAutoTags?: boolean;
     priority?: number;
+    isAutoPriority?: boolean;
     question?: string;
-    options?: Array<string> | null;
     answerMode?: 'text_only' | 'single_select' | 'multi_select';
+    answers?: {
+      options?: Array<{
+        id: string;
+        option: string;
+        description?: string;
+      }>;
+      allowOther?: boolean;
+      skippable?: boolean;
+      layout?: 'inline' | 'stacked';
+      chipPosition?: 'left' | 'right';
+      otherPlaceholder?: string;
+      freeTextPlaceholder?: string;
+      freeTextMultiline?: boolean;
+    };
     status?: 'active' | 'archived';
-    responseVisibility?: 'default' | 'private';
   };
   path: {
     projectId: string;
@@ -1307,149 +463,33 @@ export type QuestionsUpdateData = {
 
 export type QuestionsUpdateErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
 export type QuestionsUpdateError = QuestionsUpdateErrors[keyof QuestionsUpdateErrors];
@@ -1462,8 +502,21 @@ export type QuestionsUpdateResponses = {
     question: {
       id: string;
       question: string;
-      options: Array<string> | null;
       answerMode: 'text_only' | 'single_select' | 'multi_select';
+      answers: {
+        options?: Array<{
+          id: string;
+          option: string;
+          description?: string;
+        }>;
+        allowOther?: boolean;
+        skippable?: boolean;
+        layout?: 'inline' | 'stacked';
+        chipPosition?: 'left' | 'right';
+        otherPlaceholder?: string;
+        freeTextPlaceholder?: string;
+        freeTextMultiline?: boolean;
+      };
       tags: Array<
         | 'Trust'
         | 'Reliability'
@@ -1475,6 +528,8 @@ export type QuestionsUpdateResponses = {
         | 'Outcome'
       >;
       priority: number;
+      isAutoPriority: boolean;
+      isAutoTags: boolean;
       status: 'active' | 'archived';
       responseVisibility: 'default' | 'private';
       createdAt: string;
@@ -1484,395 +539,7 @@ export type QuestionsUpdateResponses = {
 
 export type QuestionsUpdateResponse = QuestionsUpdateResponses[keyof QuestionsUpdateResponses];
 
-export type PlatformGoalsGetData = {
-  body?: never;
-  path: {
-    projectId: string;
-  };
-  query?: never;
-  url: '/project/{projectId}/platform-goals';
-};
-
-export type PlatformGoalsGetErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type PlatformGoalsGetError = PlatformGoalsGetErrors[keyof PlatformGoalsGetErrors];
-
-export type PlatformGoalsGetResponses = {
-  /**
-   * OK
-   */
-  200: {
-    platformGoals: Array<{
-      id: string;
-      projectId: string;
-      goalKey:
-        | 'trust'
-        | 'reliability'
-        | 'experience'
-        | 'safety'
-        | 'personalization'
-        | 'fairness'
-        | 'identity'
-        | 'outcome';
-      position: number;
-      selected: boolean;
-      researchCoverage: number;
-      answeredToSignificance: number;
-      createdAt: string;
-      updatedAt: string;
-    }>;
-  };
-};
-
-export type PlatformGoalsGetResponse = PlatformGoalsGetResponses[keyof PlatformGoalsGetResponses];
-
-export type PlatformGoalsUpdateData = {
-  body: {
-    platformGoals: Array<{
-      id:
-        | 'trust'
-        | 'reliability'
-        | 'experience'
-        | 'safety'
-        | 'personalization'
-        | 'fairness'
-        | 'identity'
-        | 'outcome';
-      position: number;
-    }>;
-  };
-  path: {
-    projectId: string;
-  };
-  query?: never;
-  url: '/project/{projectId}/platform-goals';
-};
-
-export type PlatformGoalsUpdateErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type PlatformGoalsUpdateError = PlatformGoalsUpdateErrors[keyof PlatformGoalsUpdateErrors];
-
-export type PlatformGoalsUpdateResponses = {
-  /**
-   * OK
-   */
-  200: {
-    platformGoals: Array<{
-      id: string;
-      projectId: string;
-      goalKey:
-        | 'trust'
-        | 'reliability'
-        | 'experience'
-        | 'safety'
-        | 'personalization'
-        | 'fairness'
-        | 'identity'
-        | 'outcome';
-      position: number;
-      selected: boolean;
-      researchCoverage: number;
-      answeredToSignificance: number;
-      createdAt: string;
-      updatedAt: string;
-    }>;
-  };
-};
-
-export type PlatformGoalsUpdateResponse =
-  PlatformGoalsUpdateResponses[keyof PlatformGoalsUpdateResponses];
-
-export type PreverificationListData = {
+export type LinkListData = {
   body?: never;
   path: {
     projectId: string;
@@ -1884,202 +551,63 @@ export type PreverificationListData = {
     query?: string;
     status?: 'all' | 'issued' | 'clicked' | 'submitted' | 'expired';
   };
-  url: '/project/{projectId}/preverified-links';
+  url: '/project/{projectId}/link';
 };
 
-export type PreverificationListErrors = {
+export type LinkListErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
-export type PreverificationListError = PreverificationListErrors[keyof PreverificationListErrors];
+export type LinkListError = LinkListErrors[keyof LinkListErrors];
 
-export type PreverificationListResponses = {
+export type LinkListResponses = {
   /**
    * OK
    */
   200: {
     links: Array<{
-      verificationId: string | null;
+      verificationId: string;
       id: string;
       projectId: string;
       customerEmail: string;
+      customerFirstName: string;
+      customerLastName: string | null;
       customerReference: string | null;
-      metadata: {
-        [key: string]:
-          | string
-          | number
-          | boolean
-          | null
-          | Array<
-              | string
-              | number
-              | boolean
-              | null
-              | Array<unknown | null>
-              | {
-                  [key: string]: unknown;
-                }
-            >
-          | {
-              [key: string]:
-                | string
-                | number
-                | boolean
-                | null
-                | Array<unknown | null>
-                | {
-                    [key: string]: unknown;
-                  };
-            };
-      } | null;
       issuedAt: string;
       expiresAt: string;
+      link: string;
+      emailedAt: string | null;
+      nextEmailAt: string | null;
       clickedAt: string | null;
       submittedAt: string | null;
-      reviewId: string | null;
+      responseId: string | null;
       status: 'issued' | 'clicked' | 'submitted' | 'expired';
     }>;
     pagination: {
@@ -2090,206 +618,62 @@ export type PreverificationListResponses = {
     };
     used: number;
     limit: number;
-    periodStart: string;
-    periodEnd: string;
+    periodStart: string | null;
+    periodEnd: string | null;
   };
 };
 
-export type PreverificationListResponse =
-  PreverificationListResponses[keyof PreverificationListResponses];
+export type LinkListResponse = LinkListResponses[keyof LinkListResponses];
 
-export type PreverificationCreateLinkData = {
+export type LinkCreateData = {
   body: {
     customerEmail: string;
+    customerFirstName: string;
+    customerLastName?: string;
     customerReference?: string;
-    validityMinutes?: number;
-    metadata?: {
-      [key: string]:
-        | string
-        | number
-        | boolean
-        | null
-        | Array<
-            | string
-            | number
-            | boolean
-            | null
-            | Array<unknown>
-            | {
-                [key: string]: unknown;
-              }
-          >
-        | {
-            [key: string]:
-              | string
-              | number
-              | boolean
-              | null
-              | Array<unknown>
-              | {
-                  [key: string]: unknown;
-                };
-          };
-    };
+    sendEmail?: boolean;
   };
   path: {
     projectId: string;
   };
   query?: never;
-  url: '/project/{projectId}/preverified-links';
+  url: '/project/{projectId}/link';
 };
 
-export type PreverificationCreateLinkErrors = {
+export type LinkCreateErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
-export type PreverificationCreateLinkError =
-  PreverificationCreateLinkErrors[keyof PreverificationCreateLinkErrors];
+export type LinkCreateError = LinkCreateErrors[keyof LinkCreateErrors];
 
-export type PreverificationCreateLinkResponses = {
+export type LinkCreateResponses = {
   /**
    * OK
    */
@@ -2298,16 +682,140 @@ export type PreverificationCreateLinkResponses = {
     token: string;
     expiresAt: string;
     ttlSeconds: number;
-    validityMinutes?: number;
+    validityMinutes: 10080;
     projectId: string;
     customerEmail: string;
+    customerFirstName: string;
+    customerLastName?: string;
     customerReference?: string;
     link: string;
+    emailedAt: string | null;
+    emailError?: string | null;
   };
 };
 
-export type PreverificationCreateLinkResponse =
-  PreverificationCreateLinkResponses[keyof PreverificationCreateLinkResponses];
+export type LinkCreateResponse = LinkCreateResponses[keyof LinkCreateResponses];
+
+export type LinkResendData = {
+  body?: never;
+  path: {
+    projectId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/project/{projectId}/link/{id}/resend';
+};
+
+export type LinkResendErrors = {
+  /**
+   * Invalid request.
+   */
+  400: Http400Error;
+  /**
+   * Authentication is required.
+   */
+  401: Http401Error;
+  /**
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
+   */
+  403: Http403Error;
+  /**
+   * The requested resource was not found.
+   */
+  404: Http404Error;
+  /**
+   * The requested resource has changed.
+   */
+  409: Http409Error;
+  /**
+   * Too many requests., A delivery link was already emailed to this customer recently.
+   */
+  429: Http429Error;
+  /**
+   * The service is temporarily unavailable.
+   */
+  503: Http503Error;
+};
+
+export type LinkResendError = LinkResendErrors[keyof LinkResendErrors];
+
+export type LinkResendResponses = {
+  /**
+   * OK
+   */
+  200: {
+    emailedAt: string;
+    nextEmailAt: string;
+  };
+};
+
+export type LinkResendResponse = LinkResendResponses[keyof LinkResendResponses];
+
+export type QrDisplayData = {
+  body?: never;
+  path: {
+    projectId: string;
+  };
+  query?: never;
+  url: '/project/{projectId}/qr/display';
+};
+
+export type QrDisplayErrors = {
+  /**
+   * Invalid request.
+   */
+  400: Http400Error;
+  /**
+   * Authentication is required.
+   */
+  401: Http401Error;
+  /**
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
+   */
+  403: Http403Error;
+  /**
+   * The requested resource was not found.
+   */
+  404: Http404Error;
+  /**
+   * The requested resource has changed.
+   */
+  409: Http409Error;
+  /**
+   * Too many requests., A delivery link was already emailed to this customer recently.
+   */
+  429: Http429Error;
+  /**
+   * The service is temporarily unavailable.
+   */
+  503: Http503Error;
+};
+
+export type QrDisplayError = QrDisplayErrors[keyof QrDisplayErrors];
+
+export type QrDisplayResponses = {
+  /**
+   * OK
+   */
+  200: {
+    qrCode: {
+      id: string;
+      projectId: string;
+      mode: 'permanent' | 'rotating';
+      credentialGeneration: number;
+      rotationPeriodSeconds: 300 | null;
+      revokedAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+    link: string;
+    serverTime: string;
+    validFrom: string | null;
+    validUntil: string | null;
+  };
+};
+
+export type QrDisplayResponse = QrDisplayResponses[keyof QrDisplayResponses];
 
 export type OpinionsListData = {
   body?: never;
@@ -2321,156 +829,43 @@ export type OpinionsListData = {
     query?: string;
     dateFrom?: number;
     dateTo?: number;
-    responseStatus?: 'all' | 'responded' | 'unresponded';
+    externalUserId?: string;
+    opinionId?: string;
+    visibility?: 'all' | 'public' | 'private';
+    replyStatus?: 'all' | 'replied' | 'unreplied';
   };
   url: '/project/{projectId}/opinions';
 };
 
 export type OpinionsListErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
 export type OpinionsListError = OpinionsListErrors[keyof OpinionsListErrors];
@@ -2481,14 +876,25 @@ export type OpinionsListResponses = {
    */
   200: {
     opinions: Array<{
+      responseId: string;
+      externalUserId: string | null;
+      attributes: Schema0;
       id: string;
       projectId: string;
-      reviewTitle: string;
-      opinion: string;
+      content: string;
+      images?: Array<string>;
+      privateAt: string | null;
       createdAt: string;
-      completedAt: string | null;
-      verificationType?: 'visual_evidence' | 'in_person_visit' | 'delivery_link' | null;
+      publishedAt: string | null;
+      verificationType?:
+        | 'auto'
+        | 'visual_evidence'
+        | 'delivery_link'
+        | 'qr_permanent'
+        | 'qr_rotating'
+        | null;
       verifiedAt?: string | null;
+      verificationId?: string | null;
       user: {
         id: string | null;
         name: string;
@@ -2496,7 +902,6 @@ export type OpinionsListResponses = {
         isOwner?: boolean;
       } | null;
       store: {
-        id: string;
         organizationName: string;
         caption?: string | null;
         description?: string | null;
@@ -2508,9 +913,9 @@ export type OpinionsListResponses = {
       upvotes: number;
       downvotes: number;
       voteTotal: number;
-      ownerResponses: Array<{
+      replies: Array<{
         id: string;
-        reviewId: string;
+        opinionId: string;
         content: string;
         createdAt: string;
         user: {
@@ -2532,189 +937,6 @@ export type OpinionsListResponses = {
 
 export type OpinionsListResponse = OpinionsListResponses[keyof OpinionsListResponses];
 
-export type OpinionsRespondData = {
-  body: {
-    content: string;
-  };
-  path: {
-    projectId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/project/{projectId}/opinions/{id}/responses';
-};
-
-export type OpinionsRespondErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type OpinionsRespondError = OpinionsRespondErrors[keyof OpinionsRespondErrors];
-
-export type OpinionsRespondResponses = {
-  /**
-   * OK
-   */
-  200: {
-    ownerResponse: {
-      id: string;
-      reviewId: string;
-      content: string;
-      createdAt: string;
-      user: {
-        id: string | null;
-        name: string;
-        avatarUrl: string | null;
-        isOwner?: boolean;
-      };
-    };
-  };
-};
-
-export type OpinionsRespondResponse = OpinionsRespondResponses[keyof OpinionsRespondResponses];
-
 export type AnswersListData = {
   body?: never;
   path: {
@@ -2727,7 +949,8 @@ export type AnswersListData = {
     query?: string;
     dateFrom?: number;
     dateTo?: number;
-    reviewId?: string;
+    externalUserId?: string;
+    responseId?: string;
     questionId?: string;
     responseVisibility?: 'all' | 'default' | 'private';
   };
@@ -2736,149 +959,33 @@ export type AnswersListData = {
 
 export type AnswersListErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
 export type AnswersListError = AnswersListErrors[keyof AnswersListErrors];
@@ -2889,10 +996,10 @@ export type AnswersListResponses = {
    */
   200: {
     answers: Array<{
+      externalUserId: string | null;
       id: string;
-      reviewId: string;
+      responseId: string;
       questionId: string;
-      reviewTitle: string;
       question: string;
       tags: Array<string>;
       answer: string;
@@ -2911,1427 +1018,129 @@ export type AnswersListResponses = {
 
 export type AnswersListResponse = AnswersListResponses[keyof AnswersListResponses];
 
-export type SubscribersListData = {
+export type SubscribersCountData = {
   body?: never;
   path: {
     projectId: string;
   };
-  query?: {
-    page?: number;
-    limit?: number;
-    query?: string;
-  };
-  url: '/project/{projectId}/subscribers';
+  query?: never;
+  url: '/project/{projectId}/subscribers/count';
 };
 
-export type SubscribersListErrors = {
+export type SubscribersCountErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
-export type SubscribersListError = SubscribersListErrors[keyof SubscribersListErrors];
+export type SubscribersCountError = SubscribersCountErrors[keyof SubscribersCountErrors];
 
-export type SubscribersListResponses = {
+export type SubscribersCountResponses = {
   /**
    * OK
    */
   200: {
+    total: number;
+    delta: number;
+  };
+};
+
+export type SubscribersCountResponse = SubscribersCountResponses[keyof SubscribersCountResponses];
+
+export type SubscribersInviteData = {
+  body: {
     subscribers: Array<{
-      id: string;
-      userId: string;
+      name: string;
       email: string;
-      name: string | null;
-      image: string | null;
-      banned: boolean | null;
-      subscribedAt: string;
     }>;
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
   };
-};
-
-export type SubscribersListResponse = SubscribersListResponses[keyof SubscribersListResponses];
-
-export type SubscribersBlockData = {
-  body?: never;
   path: {
     projectId: string;
-    id: string;
   };
   query?: never;
-  url: '/project/{projectId}/subscribers/{id}';
+  url: '/project/{projectId}/subscribers/invite';
 };
 
-export type SubscribersBlockErrors = {
+export type SubscribersInviteErrors = {
   /**
-   * 400
+   * Invalid request.
    */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  400: Http400Error;
   /**
-   * 401
+   * Authentication is required.
    */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  401: Http401Error;
   /**
-   * 403
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
    */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  403: Http403Error;
   /**
-   * 404
+   * The requested resource was not found.
    */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  404: Http404Error;
   /**
-   * 409
+   * The requested resource has changed.
    */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  409: Http409Error;
   /**
-   * 429
+   * Too many requests., A delivery link was already emailed to this customer recently.
    */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  429: Http429Error;
   /**
-   * 503
+   * The service is temporarily unavailable.
    */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
+  503: Http503Error;
 };
 
-export type SubscribersBlockError = SubscribersBlockErrors[keyof SubscribersBlockErrors];
+export type SubscribersInviteError = SubscribersInviteErrors[keyof SubscribersInviteErrors];
 
-export type SubscribersBlockResponses = {
+export type SubscribersInviteResponses = {
   /**
    * OK
    */
   200: {
-    success: boolean;
-  };
-};
-
-export type SubscribersBlockResponse = SubscribersBlockResponses[keyof SubscribersBlockResponses];
-
-export type KbGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/kb';
-};
-
-export type KbGetErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type KbGetError = KbGetErrors[keyof KbGetErrors];
-
-export type KbGetResponses = {
-  /**
-   * OK
-   */
-  200: {
-    knowledgebase: {
-      organizationId: string;
-      items: Array<{
-        id: string;
-        organizationId: string;
-        link: string | null;
-        title: string | null;
-        description: string | null;
-        markdown: string | null;
-        markdownKey: string;
-        metadataKey: string;
-        contentLength: number;
-        createdAt: string;
-        updatedAt: string;
-      }>;
-    } | null;
-  };
-};
-
-export type KbGetResponse = KbGetResponses[keyof KbGetResponses];
-
-export type KbAddItemData = {
-  body: {
-    url?: string;
-    text?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/kb';
-};
-
-export type KbAddItemErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type KbAddItemError = KbAddItemErrors[keyof KbAddItemErrors];
-
-export type KbAddItemResponses = {
-  /**
-   * OK
-   */
-  200: {
-    item: {
-      id: string;
-      organizationId: string;
-      link: string | null;
-      title: string | null;
-      description: string | null;
-      markdown: string | null;
-      markdownKey: string;
-      metadataKey: string;
-      contentLength: number;
-      createdAt: string;
-      updatedAt: string;
-    };
-  };
-};
-
-export type KbAddItemResponse = KbAddItemResponses[keyof KbAddItemResponses];
-
-export type KbDeleteItemData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/kb/{id}';
-};
-
-export type KbDeleteItemErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type KbDeleteItemError = KbDeleteItemErrors[keyof KbDeleteItemErrors];
-
-export type KbDeleteItemResponses = {
-  /**
-   * OK
-   */
-  200: {
-    success: boolean;
-  };
-};
-
-export type KbDeleteItemResponse = KbDeleteItemResponses[keyof KbDeleteItemResponses];
-
-export type KbUpdateItemData = {
-  body?: {
-    url?: string;
-    text?: string;
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/kb/{id}';
-};
-
-export type KbUpdateItemErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type KbUpdateItemError = KbUpdateItemErrors[keyof KbUpdateItemErrors];
-
-export type KbUpdateItemResponses = {
-  /**
-   * OK
-   */
-  200: {
-    item: {
-      id: string;
-      organizationId: string;
-      link: string | null;
-      title: string | null;
-      description: string | null;
-      markdown: string | null;
-      markdownKey: string;
-      metadataKey: string;
-      contentLength: number;
-      createdAt: string;
-      updatedAt: string;
-    };
-  };
-};
-
-export type KbUpdateItemResponse = KbUpdateItemResponses[keyof KbUpdateItemResponses];
-
-export type WebhooksPortalData = {
-  body?: {
-    theme?: 'light' | 'dark';
-  };
-  path?: never;
-  query?: never;
-  url: '/webhooks/portal';
-};
-
-export type WebhooksPortalErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type WebhooksPortalError = WebhooksPortalErrors[keyof WebhooksPortalErrors];
-
-export type WebhooksPortalResponses = {
-  /**
-   * OK
-   */
-  200: {
-    redirectUrl: string;
-    tenantId: string;
-    topics: Array<{
-      name: 'review.opinion.received' | 'review.answer.received';
-      description: string;
+    invited: Array<{
+      name: string;
+      email: string;
     }>;
-  };
-};
-
-export type WebhooksPortalResponse = WebhooksPortalResponses[keyof WebhooksPortalResponses];
-
-export type WebhooksUpsertDestinationData = {
-  body: {
-    url: string;
-    topics?: Array<'review.opinion.received' | 'review.answer.received'>;
-    destinationId?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/webhooks/destinations';
-};
-
-export type WebhooksUpsertDestinationErrors = {
-  /**
-   * 400
-   */
-  400:
-    | {
-        defined: true;
-        code: 'BAD_REQUEST';
-        status: 400;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 401
-   */
-  401:
-    | {
-        defined: true;
-        code: 'UNAUTHORIZED';
-        status: 401;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 403
-   */
-  403:
-    | {
-        defined: true;
-        code: 'FORBIDDEN';
-        status: 403;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: true;
-        code: 'PLAN_LIMIT_REACHED';
-        status: 403;
-        message: string;
-        data: {
-          metric:
-            | 'privateAnswersPerOrganizationMonth'
-            | 'preverifiedLinksPerProjectMonth'
-            | 'goalsPerProject'
-            | 'activeQuestionsPerProject'
-            | 'additionalTeamsPerOrganization'
-            | 'membersPerAdditionalTeam';
-          currentUsage: number;
-          limit: number;
-          upgradePath: '/billing';
-        };
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 404
-   */
-  404:
-    | {
-        defined: true;
-        code: 'NOT_FOUND';
-        status: 404;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 409
-   */
-  409:
-    | {
-        defined: true;
-        code: 'CONFLICT';
-        status: 409;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 429
-   */
-  429:
-    | {
-        defined: true;
-        code: 'TOO_MANY_REQUESTS';
-        status: 429;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-  /**
-   * 503
-   */
-  503:
-    | {
-        defined: true;
-        code: 'SERVICE_UNAVAILABLE';
-        status: 503;
-        message: string;
-        data?: unknown;
-      }
-    | {
-        defined: false;
-        code: string;
-        status: number;
-        message: string;
-        data?: unknown;
-      };
-};
-
-export type WebhooksUpsertDestinationError =
-  WebhooksUpsertDestinationErrors[keyof WebhooksUpsertDestinationErrors];
-
-export type WebhooksUpsertDestinationResponses = {
-  /**
-   * OK
-   */
-  200: {
-    destination: {
-      id: string;
-      type: 'webhook';
-      topics: Array<'review.opinion.received' | 'review.answer.received'>;
+    skipped: Array<{
+      name: string;
+      email: string;
+      reason: 'already_subscribed' | 'already_invited' | 'duplicate' | 'delivery_failed';
+    }>;
+    invitationAllowance: {
+      used: number;
+      limit: 100;
+      remaining: number;
+      resetsAt: string;
     };
   };
 };
 
-export type WebhooksUpsertDestinationResponse =
-  WebhooksUpsertDestinationResponses[keyof WebhooksUpsertDestinationResponses];
+export type SubscribersInviteResponse =
+  SubscribersInviteResponses[keyof SubscribersInviteResponses];
