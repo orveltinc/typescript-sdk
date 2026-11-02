@@ -1,6 +1,7 @@
 name: 'Business SDK'
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -23,50 +24,90 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.4
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Verify Business SDK
         run: bun run lint && bun run format:check && bun run check-generated && bun run typecheck && bun run test
 
+      - name: Build publishable package
+        run: bun run build
+
+      - name: Pack npm-compatible artifact
+        run: |
+          mkdir -p test/results
+          bun pm pack --ignore-scripts --filename "$PWD/test/results/orvelt-business.tgz"
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Test the packed SDK
+        run: bun run test-e2e
+
+      - name: Save the verified release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: business-sdk-package
+          path: test/results/orvelt-business.tgz
+          if-no-files-found: error
+
+      - name: Save browser test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: business-sdk-verification
+          path: |
+            test/results/playwright
+            test/report
+
   publish:
     name: 'Publish @orvelt/business to npm'
     needs: verify
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: npm
     steps:
       - uses: actions/checkout@v5
 
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.4
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Verify release tag matches package version
-        shell: bash
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PACKAGE_VERSION="$(node --input-type=module -e "import packageJson from './package.json' with { type: 'json' }; console.log(packageJson.version)")"
+      - name: Require the standalone main branch
+        run: test "$GITHUB_REF" = refs/heads/main
 
-          if [[ "$TAG_VERSION" != "$PACKAGE_VERSION" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($PACKAGE_VERSION)."
-            exit 1
-          fi
-
-      - name: Build publishable package
-        run: bun run build
+      # Publish the exact tarball that passed verification, without rebuilding it.
+      - name: Download verified package
+        uses: actions/download-artifact@v4
+        with:
+          name: business-sdk-package
+          path: test/results
 
       - name: Inspect package contents
-        run: npm pack --dry-run --ignore-scripts
+        run: npm pack ./test/results/orvelt-business.tgz --dry-run --ignore-scripts
 
       - name: Publish with npm trusted publishing
-        run: npm publish --access public --ignore-scripts
+        run: |
+          VERSION="$(node --input-type=module -e "import packageJson from './package.json' with { type: 'json' }; console.log(packageJson.version)")"
+          TAG=latest
+          if [[ "$VERSION" == *-* ]]; then TAG=next; fi
+          npm publish ./test/results/orvelt-business.tgz --access public --ignore-scripts --tag "$TAG"

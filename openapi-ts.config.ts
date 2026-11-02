@@ -15,7 +15,16 @@ export function createBusinessSdkGeneratorConfig(outputPath = defaultOutputPath)
       clean: true,
       module: { extension: '.js' },
       path: outputPath,
-      postProcess: ['oxfmt'],
+      postProcess: [
+        {
+          command: 'bun',
+          args: [
+            fileURLToPath(new URL('./scripts/fix-generated-headers.ts', import.meta.url)),
+            '{{path}}',
+          ],
+        },
+        'oxfmt',
+      ],
       tsConfigPath: fileURLToPath(new URL('./tsconfig.json', import.meta.url)),
     },
     plugins: [

@@ -2,93 +2,185 @@
 
 import * as z from 'zod';
 
-export const zGoalsListPath = z.object({
-  projectId: z.uuid(),
-});
-
-export const zGoalsListQuery = z.object({
-  page: z.int().gte(1).lte(9007199254740991).optional().default(1),
-  limit: z.int().gte(1).lte(100).optional().default(10),
-});
-
 /**
- * OK
+ * UndefinedError
  */
-export const zGoalsListResponse = z.object({
-  goals: z.array(
-    z.object({
-      id: z.string(),
-      projectId: z.uuid(),
-      goal: z.string(),
-      createdAt: z.iso.datetime(),
-      updatedAt: z.iso.datetime(),
-    }),
-  ),
-  pagination: z.object({
-    page: z.int().gte(-9007199254740991).lte(9007199254740991),
-    limit: z.int().gte(-9007199254740991).lte(9007199254740991),
-    total: z.int().gte(-9007199254740991).lte(9007199254740991),
-    totalPages: z.int().gte(-9007199254740991).lte(9007199254740991),
+export const zUndefinedError = z.object({
+  defined: z.literal(false),
+  code: z.string(),
+  message: z.string(),
+  data: z.unknown().optional(),
+});
+
+export const zUnexpectedHttpError = z.object({
+  defined: z.literal(false),
+  code: z.string(),
+  status: z.number(),
+  message: z.string(),
+  data: z.unknown().optional(),
+});
+
+export const zBadRequestError = z.object({
+  defined: z.literal(true),
+  code: z.literal('BAD_REQUEST'),
+  status: z.literal(400),
+  message: z.string().default('Invalid request.'),
+  data: z.unknown().optional(),
+});
+
+export const zHttp400Error = z.union([zBadRequestError, zUnexpectedHttpError]);
+
+export const zUnauthorizedError = z.object({
+  defined: z.literal(true),
+  code: z.literal('UNAUTHORIZED'),
+  status: z.literal(401),
+  message: z.string().default('Authentication is required.'),
+  data: z.unknown().optional(),
+});
+
+export const zHttp401Error = z.union([zUnauthorizedError, zUnexpectedHttpError]);
+
+export const zForbiddenError = z.object({
+  defined: z.literal(true),
+  code: z.literal('FORBIDDEN'),
+  status: z.literal(403),
+  message: z.string().default('You do not have permission to perform this action.'),
+  data: z.unknown().optional(),
+});
+
+export const zPlanLimitReachedError = z.object({
+  defined: z.literal(true),
+  code: z.literal('PLAN_LIMIT_REACHED'),
+  status: z.literal(403),
+  message: z.string().default('This action would exceed the current plan limit.'),
+  data: z.object({
+    metric: z.enum([
+      'privateAnswersPerOrganizationMonth',
+      'preverifiedLinksPerProjectMonth',
+      'goalsPerProject',
+      'activeQuestionsPerProject',
+      'additionalTeamsPerOrganization',
+      'membersPerAdditionalTeam',
+      'knowledgebaseStorageBytes',
+    ]),
+    currentUsage: z.number().gte(0),
+    limit: z.number().gte(0),
+    upgradePath: z.literal('/billing'),
   }),
 });
 
-export const zGoalsCreateBody = z.object({
-  goal: z.string().min(1).max(2000),
+export const zHttp403Error = z.union([
+  zForbiddenError,
+  zPlanLimitReachedError,
+  zUnexpectedHttpError,
+]);
+
+export const zNotFoundError = z.object({
+  defined: z.literal(true),
+  code: z.literal('NOT_FOUND'),
+  status: z.literal(404),
+  message: z.string().default('The requested resource was not found.'),
+  data: z.unknown().optional(),
 });
 
-export const zGoalsCreatePath = z.object({
-  projectId: z.uuid(),
+export const zHttp404Error = z.union([zNotFoundError, zUnexpectedHttpError]);
+
+export const zConflictError = z.object({
+  defined: z.literal(true),
+  code: z.literal('CONFLICT'),
+  status: z.literal(409),
+  message: z.string().default('The requested resource has changed.'),
+  data: z.unknown().optional(),
 });
 
-/**
- * OK
- */
-export const zGoalsCreateResponse = z.object({
-  goal: z.object({
-    id: z.string(),
-    projectId: z.uuid(),
-    goal: z.string(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
+export const zHttp409Error = z.union([zConflictError, zUnexpectedHttpError]);
+
+export const zTooManyRequestsError = z.object({
+  defined: z.literal(true),
+  code: z.literal('TOO_MANY_REQUESTS'),
+  status: z.literal(429),
+  message: z.string().default('Too many requests.'),
+  data: z.unknown().optional(),
+});
+
+export const zLinkEmailCooldownError = z.object({
+  defined: z.literal(true),
+  code: z.literal('LINK_EMAIL_COOLDOWN'),
+  status: z.literal(429),
+  message: z.string().default('A delivery link was already emailed to this customer recently.'),
+  data: z.object({
+    nextEligibleAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
   }),
 });
 
-export const zGoalsDeletePath = z.object({
-  projectId: z.uuid(),
-  goalId: z.uuid(),
+export const zHttp429Error = z.union([
+  zTooManyRequestsError,
+  zLinkEmailCooldownError,
+  zUnexpectedHttpError,
+]);
+
+export const zServiceUnavailableError = z.object({
+  defined: z.literal(true),
+  code: z.literal('SERVICE_UNAVAILABLE'),
+  status: z.literal(503),
+  message: z.string().default('The service is temporarily unavailable.'),
+  data: z.unknown().optional(),
 });
 
-/**
- * OK
- */
-export const zGoalsDeleteResponse = z.object({
-  success: z.boolean(),
-});
+export const zHttp503Error = z.union([zServiceUnavailableError, zUnexpectedHttpError]);
 
-export const zGoalsUpdateBody = z.object({
-  goal: z.string().min(1).max(2000),
-});
+export const zSchema0 = z
+  .union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(z.lazy((): any => zSchema0)),
+    z.record(
+      z.string(),
+      z.lazy((): any => zSchema0),
+    ),
+  ])
+  .nullable();
 
-export const zGoalsUpdatePath = z.object({
-  projectId: z.uuid(),
-  goalId: z.uuid(),
-});
+export const zOpinionEmbedSchema0 = z
+  .union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(z.lazy((): any => zOpinionEmbedSchema0)),
+    z.record(
+      z.string(),
+      z.lazy((): any => zOpinionEmbedSchema0),
+    ),
+  ])
+  .nullable();
 
-/**
- * OK
- */
-export const zGoalsUpdateResponse = z.object({
-  goal: z.object({
-    id: z.string(),
-    projectId: z.uuid(),
-    goal: z.string(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  }),
+export const zOpinionEmbedConfiguration = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  visibility: z.enum(['public', 'private']).default('public'),
+  externalUserId: z
+    .string()
+    .min(1)
+    .max(256)
+    .regex(/^[^\x00-\x1f\x7f]+$/)
+    .optional(),
+  attributes: zOpinionEmbedSchema0.optional(),
 });
 
 export const zQuestionsListPath = z.object({
-  projectId: z.uuid(),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
@@ -99,26 +191,49 @@ export const zQuestionsListResponse = z.object({
     z.object({
       id: z.string(),
       question: z.string(),
-      options: z.array(z.string().min(1)).min(2).max(6).nullable(),
       answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
-      tags: z
-        .array(
-          z.enum([
-            'Trust',
-            'Reliability',
-            'Experience',
-            'Safety',
-            'Personalization',
-            'Fairness',
-            'Identity',
-            'Outcome',
-          ]),
-        )
-        .min(1),
+      answers: z.object({
+        options: z
+          .array(
+            z.object({
+              id: z.string().min(1).max(64),
+              option: z.string().min(1).max(200),
+              description: z.string().max(200).optional(),
+            }),
+          )
+          .min(2)
+          .max(6)
+          .optional(),
+        allowOther: z.boolean().optional(),
+        skippable: z.boolean().optional(),
+        layout: z.enum(['inline', 'stacked']).optional(),
+        chipPosition: z.enum(['left', 'right']).optional(),
+        otherPlaceholder: z.string().max(120).optional(),
+        freeTextPlaceholder: z.string().max(120).optional(),
+        freeTextMultiline: z.boolean().optional(),
+      }),
+      tags: z.array(
+        z.enum([
+          'Trust',
+          'Reliability',
+          'Experience',
+          'Safety',
+          'Personalization',
+          'Fairness',
+          'Identity',
+          'Outcome',
+        ]),
+      ),
       priority: z.int().gte(1).lte(100),
+      isAutoPriority: z.boolean(),
+      isAutoTags: z.boolean(),
       status: z.enum(['active', 'archived']),
       responseVisibility: z.enum(['default', 'private']),
-      createdAt: z.iso.datetime(),
+      createdAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        ),
     }),
   ),
   activeCount: z.int().gte(0).lte(9007199254740991),
@@ -139,17 +254,46 @@ export const zQuestionsCreateBody = z.object({
         'Outcome',
       ]),
     )
-    .min(1),
+    .min(1)
+    .optional(),
+  isAutoTags: z.boolean().optional(),
   priority: z.int().gte(1).lte(100),
+  isAutoPriority: z.boolean(),
   question: z.string().min(1).max(500),
-  options: z.array(z.string().min(1)).min(2).max(6).nullable(),
   answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
+  answers: z
+    .object({
+      options: z
+        .array(
+          z.object({
+            id: z.string().min(1).max(64),
+            option: z.string().min(1).max(200),
+            description: z.string().max(200).optional(),
+          }),
+        )
+        .min(2)
+        .max(6)
+        .optional(),
+      allowOther: z.boolean().optional(),
+      skippable: z.boolean().optional(),
+      layout: z.enum(['inline', 'stacked']).optional(),
+      chipPosition: z.enum(['left', 'right']).optional(),
+      otherPlaceholder: z.string().max(120).optional(),
+      freeTextPlaceholder: z.string().max(120).optional(),
+      freeTextMultiline: z.boolean().optional(),
+    })
+    .optional()
+    .default({}),
   status: z.enum(['active', 'archived']),
   responseVisibility: z.enum(['default', 'private']),
 });
 
 export const zQuestionsCreatePath = z.object({
-  projectId: z.uuid(),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
@@ -159,32 +303,63 @@ export const zQuestionsCreateResponse = z.object({
   question: z.object({
     id: z.string(),
     question: z.string(),
-    options: z.array(z.string().min(1)).min(2).max(6).nullable(),
     answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
-    tags: z
-      .array(
-        z.enum([
-          'Trust',
-          'Reliability',
-          'Experience',
-          'Safety',
-          'Personalization',
-          'Fairness',
-          'Identity',
-          'Outcome',
-        ]),
-      )
-      .min(1),
+    answers: z.object({
+      options: z
+        .array(
+          z.object({
+            id: z.string().min(1).max(64),
+            option: z.string().min(1).max(200),
+            description: z.string().max(200).optional(),
+          }),
+        )
+        .min(2)
+        .max(6)
+        .optional(),
+      allowOther: z.boolean().optional(),
+      skippable: z.boolean().optional(),
+      layout: z.enum(['inline', 'stacked']).optional(),
+      chipPosition: z.enum(['left', 'right']).optional(),
+      otherPlaceholder: z.string().max(120).optional(),
+      freeTextPlaceholder: z.string().max(120).optional(),
+      freeTextMultiline: z.boolean().optional(),
+    }),
+    tags: z.array(
+      z.enum([
+        'Trust',
+        'Reliability',
+        'Experience',
+        'Safety',
+        'Personalization',
+        'Fairness',
+        'Identity',
+        'Outcome',
+      ]),
+    ),
     priority: z.int().gte(1).lte(100),
+    isAutoPriority: z.boolean(),
+    isAutoTags: z.boolean(),
     status: z.enum(['active', 'archived']),
     responseVisibility: z.enum(['default', 'private']),
-    createdAt: z.iso.datetime(),
+    createdAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
   }),
 });
 
 export const zQuestionsDeletePath = z.object({
-  projectId: z.uuid(),
-  questionId: z.uuid(),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  questionId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
@@ -210,17 +385,47 @@ export const zQuestionsUpdateBody = z.object({
     )
     .min(1)
     .optional(),
+  isAutoTags: z.boolean().optional(),
   priority: z.int().gte(1).lte(100).optional(),
+  isAutoPriority: z.boolean().optional(),
   question: z.string().min(1).max(500).optional(),
-  options: z.array(z.string().min(1)).min(2).max(6).nullish(),
   answerMode: z.enum(['text_only', 'single_select', 'multi_select']).optional(),
+  answers: z
+    .object({
+      options: z
+        .array(
+          z.object({
+            id: z.string().min(1).max(64),
+            option: z.string().min(1).max(200),
+            description: z.string().max(200).optional(),
+          }),
+        )
+        .min(2)
+        .max(6)
+        .optional(),
+      allowOther: z.boolean().optional(),
+      skippable: z.boolean().optional(),
+      layout: z.enum(['inline', 'stacked']).optional(),
+      chipPosition: z.enum(['left', 'right']).optional(),
+      otherPlaceholder: z.string().max(120).optional(),
+      freeTextPlaceholder: z.string().max(120).optional(),
+      freeTextMultiline: z.boolean().optional(),
+    })
+    .optional(),
   status: z.enum(['active', 'archived']).optional(),
-  responseVisibility: z.enum(['default', 'private']).optional(),
 });
 
 export const zQuestionsUpdatePath = z.object({
-  projectId: z.uuid(),
-  questionId: z.uuid(),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  questionId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
@@ -230,119 +435,61 @@ export const zQuestionsUpdateResponse = z.object({
   question: z.object({
     id: z.string(),
     question: z.string(),
-    options: z.array(z.string().min(1)).min(2).max(6).nullable(),
     answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
-    tags: z
-      .array(
-        z.enum([
-          'Trust',
-          'Reliability',
-          'Experience',
-          'Safety',
-          'Personalization',
-          'Fairness',
-          'Identity',
-          'Outcome',
-        ]),
-      )
-      .min(1),
+    answers: z.object({
+      options: z
+        .array(
+          z.object({
+            id: z.string().min(1).max(64),
+            option: z.string().min(1).max(200),
+            description: z.string().max(200).optional(),
+          }),
+        )
+        .min(2)
+        .max(6)
+        .optional(),
+      allowOther: z.boolean().optional(),
+      skippable: z.boolean().optional(),
+      layout: z.enum(['inline', 'stacked']).optional(),
+      chipPosition: z.enum(['left', 'right']).optional(),
+      otherPlaceholder: z.string().max(120).optional(),
+      freeTextPlaceholder: z.string().max(120).optional(),
+      freeTextMultiline: z.boolean().optional(),
+    }),
+    tags: z.array(
+      z.enum([
+        'Trust',
+        'Reliability',
+        'Experience',
+        'Safety',
+        'Personalization',
+        'Fairness',
+        'Identity',
+        'Outcome',
+      ]),
+    ),
     priority: z.int().gte(1).lte(100),
+    isAutoPriority: z.boolean(),
+    isAutoTags: z.boolean(),
     status: z.enum(['active', 'archived']),
     responseVisibility: z.enum(['default', 'private']),
-    createdAt: z.iso.datetime(),
+    createdAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
   }),
 });
 
-export const zPlatformGoalsGetPath = z.object({
-  projectId: z.uuid(),
+export const zLinkListPath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
-/**
- * OK
- */
-export const zPlatformGoalsGetResponse = z.object({
-  platformGoals: z.array(
-    z.object({
-      id: z.string(),
-      projectId: z.uuid(),
-      goalKey: z.enum([
-        'trust',
-        'reliability',
-        'experience',
-        'safety',
-        'personalization',
-        'fairness',
-        'identity',
-        'outcome',
-      ]),
-      position: z.int().gte(0).lte(9007199254740991),
-      selected: z.boolean(),
-      researchCoverage: z.int().gte(0).lte(100),
-      answeredToSignificance: z.int().gte(0).lte(100),
-      createdAt: z.iso.datetime(),
-      updatedAt: z.iso.datetime(),
-    }),
-  ),
-});
-
-export const zPlatformGoalsUpdateBody = z.object({
-  platformGoals: z
-    .array(
-      z.object({
-        id: z.enum([
-          'trust',
-          'reliability',
-          'experience',
-          'safety',
-          'personalization',
-          'fairness',
-          'identity',
-          'outcome',
-        ]),
-        position: z.int().gte(0).lte(9007199254740991),
-      }),
-    )
-    .min(1)
-    .max(8),
-});
-
-export const zPlatformGoalsUpdatePath = z.object({
-  projectId: z.uuid(),
-});
-
-/**
- * OK
- */
-export const zPlatformGoalsUpdateResponse = z.object({
-  platformGoals: z.array(
-    z.object({
-      id: z.string(),
-      projectId: z.uuid(),
-      goalKey: z.enum([
-        'trust',
-        'reliability',
-        'experience',
-        'safety',
-        'personalization',
-        'fairness',
-        'identity',
-        'outcome',
-      ]),
-      position: z.int().gte(0).lte(9007199254740991),
-      selected: z.boolean(),
-      researchCoverage: z.int().gte(0).lte(100),
-      answeredToSignificance: z.int().gte(0).lte(100),
-      createdAt: z.iso.datetime(),
-      updatedAt: z.iso.datetime(),
-    }),
-  ),
-});
-
-export const zPreverificationListPath = z.object({
-  projectId: z.uuid(),
-});
-
-export const zPreverificationListQuery = z.object({
+export const zLinkListQuery = z.object({
   page: z.int().gte(1).lte(9007199254740991).optional().default(1),
   limit: z.int().gte(1).lte(100).optional().default(10),
   sort: z.enum(['newest', 'oldest']).optional().default('newest'),
@@ -353,56 +500,69 @@ export const zPreverificationListQuery = z.object({
 /**
  * OK
  */
-export const zPreverificationListResponse = z.object({
+export const zLinkListResponse = z.object({
   links: z.array(
     z.object({
-      verificationId: z
-        .string()
-        .regex(/^[A-Za-z0-9_-]{21}$/)
-        .nullable(),
-      id: z.uuid(),
-      projectId: z.uuid(),
-      customerEmail: z.email(),
+      verificationId: z.string().regex(/^[A-Za-z0-9_-]{21}$/),
+      id: z
+        .uuid()
+        .regex(
+          /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+        ),
+      projectId: z
+        .uuid()
+        .regex(
+          /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+        ),
+      customerEmail: z
+        .email()
+        .regex(
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      customerFirstName: z.string(),
+      customerLastName: z.string().nullable(),
       customerReference: z.string().nullable(),
-      metadata: z
-        .record(
-          z.string(),
-          z
-            .union([
-              z.string(),
-              z.number(),
-              z.boolean(),
-              z.array(
-                z.union([
-                  z.string(),
-                  z.number(),
-                  z.boolean(),
-                  z.null(),
-                  z.array(z.union([z.unknown(), z.null()])),
-                  z.record(z.string(), z.unknown()),
-                ]),
-              ),
-              z.record(
-                z.string(),
-                z
-                  .union([
-                    z.string(),
-                    z.number(),
-                    z.boolean(),
-                    z.array(z.union([z.unknown(), z.null()])),
-                    z.record(z.string(), z.unknown()),
-                  ])
-                  .nullable(),
-              ),
-            ])
-            .nullable(),
+      issuedAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        ),
+      expiresAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        ),
+      link: z.url(),
+      emailedAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
         )
         .nullable(),
-      issuedAt: z.iso.datetime(),
-      expiresAt: z.iso.datetime(),
-      clickedAt: z.iso.datetime().nullable(),
-      submittedAt: z.iso.datetime().nullable(),
-      reviewId: z.uuid().nullable(),
+      nextEmailAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        )
+        .nullable(),
+      clickedAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        )
+        .nullable(),
+      submittedAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        )
+        .nullable(),
+      responseId: z
+        .uuid()
+        .regex(
+          /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+        )
+        .nullable(),
       status: z.enum(['issued', 'clicked', 'submitted', 'expired']),
     }),
   ),
@@ -414,71 +574,174 @@ export const zPreverificationListResponse = z.object({
   }),
   used: z.int().gte(0).lte(9007199254740991),
   limit: z.int().gte(0).lte(9007199254740991),
-  periodStart: z.iso.datetime(),
-  periodEnd: z.iso.datetime(),
-});
-
-export const zPreverificationCreateLinkBody = z.object({
-  customerEmail: z.email(),
-  customerReference: z.string().min(1).max(255).optional(),
-  validityMinutes: z.int().gte(1).lte(43200).optional().default(5),
-  metadata: z
-    .record(
-      z.string(),
-      z
-        .union([
-          z.string(),
-          z.number(),
-          z.boolean(),
-          z.array(
-            z.union([
-              z.string(),
-              z.number(),
-              z.boolean(),
-              z.null(),
-              z.array(z.unknown()),
-              z.record(z.string(), z.unknown()),
-            ]),
-          ),
-          z.record(
-            z.string(),
-            z
-              .union([
-                z.string(),
-                z.number(),
-                z.boolean(),
-                z.array(z.unknown()),
-                z.record(z.string(), z.unknown()),
-              ])
-              .nullable(),
-          ),
-        ])
-        .nullable(),
+  periodStart: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
     )
-    .optional(),
+    .nullable(),
+  periodEnd: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    )
+    .nullable(),
 });
 
-export const zPreverificationCreateLinkPath = z.object({
-  projectId: z.uuid(),
+export const zLinkCreateBody = z.object({
+  customerEmail: z
+    .email()
+    .regex(
+      /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+    ),
+  customerFirstName: z.string().min(1).max(100),
+  customerLastName: z.string().min(1).max(100).optional(),
+  customerReference: z.string().min(1).max(255).optional(),
+  sendEmail: z.boolean().optional().default(true),
+});
+
+export const zLinkCreatePath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
  * OK
  */
-export const zPreverificationCreateLinkResponse = z.object({
+export const zLinkCreateResponse = z.object({
   verificationId: z.string().regex(/^[A-Za-z0-9_-]{21}$/),
-  token: z.uuid(),
-  expiresAt: z.iso.datetime(),
+  token: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  expiresAt: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    ),
   ttlSeconds: z.int().gt(0).lte(9007199254740991),
-  validityMinutes: z.int().gte(1).lte(43200).optional().default(5),
-  projectId: z.uuid(),
-  customerEmail: z.email(),
+  validityMinutes: z.literal(10080),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  customerEmail: z
+    .email()
+    .regex(
+      /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+    ),
+  customerFirstName: z.string().min(1).max(100),
+  customerLastName: z.string().min(1).max(100).optional(),
   customerReference: z.string().min(1).max(255).optional(),
   link: z.url(),
+  emailedAt: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    )
+    .nullable(),
+  emailError: z.string().nullish().default(null),
+});
+
+export const zLinkResendPath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  id: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+});
+
+/**
+ * OK
+ */
+export const zLinkResendResponse = z.object({
+  emailedAt: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    ),
+  nextEmailAt: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    ),
+});
+
+export const zQrDisplayPath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+});
+
+/**
+ * OK
+ */
+export const zQrDisplayResponse = z.object({
+  qrCode: z.object({
+    id: z.string().regex(/^[A-Za-z0-9_-]{21}$/),
+    projectId: z
+      .uuid()
+      .regex(
+        /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+      ),
+    mode: z.enum(['permanent', 'rotating']),
+    credentialGeneration: z.int().gt(0).lte(9007199254740991),
+    rotationPeriodSeconds: z.literal(300).nullable(),
+    revokedAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      )
+      .nullable(),
+    createdAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
+    updatedAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
+  }),
+  link: z.url(),
+  serverTime: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    ),
+  validFrom: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    )
+    .nullable(),
+  validUntil: z.iso
+    .datetime()
+    .regex(
+      /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+    )
+    .nullable(),
 });
 
 export const zOpinionsListPath = z.object({
-  projectId: z.uuid(),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 export const zOpinionsListQuery = z.object({
@@ -486,9 +749,17 @@ export const zOpinionsListQuery = z.object({
   limit: z.int().gte(1).lte(100).optional().default(10),
   sort: z.enum(['newest', 'oldest', 'most-upvoted', 'least-upvoted']).optional().default('newest'),
   query: z.string().max(200).optional().default(''),
-  dateFrom: z.int().gte(0).lte(9007199254740991).optional(),
-  dateTo: z.int().gte(0).lte(9007199254740991).optional(),
-  responseStatus: z.enum(['all', 'responded', 'unresponded']).optional().default('all'),
+  dateFrom: z.int().gte(0).lte(8640000000000000).optional(),
+  dateTo: z.int().gte(0).lte(8640000000000000).optional(),
+  externalUserId: z.string().min(1).max(256).optional(),
+  opinionId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    )
+    .optional(),
+  visibility: z.enum(['all', 'public', 'private']).optional().default('all'),
+  replyStatus: z.enum(['all', 'replied', 'unreplied']).optional().default('all'),
 });
 
 /**
@@ -497,14 +768,48 @@ export const zOpinionsListQuery = z.object({
 export const zOpinionsListResponse = z.object({
   opinions: z.array(
     z.object({
+      responseId: z
+        .uuid()
+        .regex(
+          /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+        ),
+      externalUserId: z.string().nullable(),
+      attributes: zSchema0,
       id: z.string(),
-      projectId: z.uuid(),
-      reviewTitle: z.string(),
-      opinion: z.string(),
-      createdAt: z.iso.datetime(),
-      completedAt: z.iso.datetime().nullable(),
-      verificationType: z.enum(['visual_evidence', 'in_person_visit', 'delivery_link']).nullish(),
-      verifiedAt: z.iso.datetime().nullish(),
+      projectId: z
+        .uuid()
+        .regex(
+          /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+        ),
+      content: z.string(),
+      images: z.array(z.url()).optional().default([]),
+      privateAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        )
+        .nullable(),
+      createdAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        ),
+      publishedAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        )
+        .nullable(),
+      verificationType: z
+        .enum(['auto', 'visual_evidence', 'delivery_link', 'qr_permanent', 'qr_rotating'])
+        .nullish(),
+      verifiedAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        )
+        .nullish(),
+      verificationId: z.string().nullish(),
       user: z
         .object({
           id: z.string().nullable(),
@@ -514,7 +819,6 @@ export const zOpinionsListResponse = z.object({
         })
         .nullable(),
       store: z.object({
-        id: z.string(),
         organizationName: z.string(),
         caption: z.string().nullish(),
         description: z.string().nullish(),
@@ -526,12 +830,16 @@ export const zOpinionsListResponse = z.object({
       upvotes: z.int().gte(-9007199254740991).lte(9007199254740991),
       downvotes: z.int().gte(-9007199254740991).lte(9007199254740991),
       voteTotal: z.int().gte(-9007199254740991).lte(9007199254740991),
-      ownerResponses: z.array(
+      replies: z.array(
         z.object({
           id: z.string(),
-          reviewId: z.string(),
+          opinionId: z.string(),
           content: z.string(),
-          createdAt: z.iso.datetime(),
+          createdAt: z.iso
+            .datetime()
+            .regex(
+              /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+            ),
           user: z.object({
             id: z.string().nullable(),
             name: z.string(),
@@ -550,35 +858,12 @@ export const zOpinionsListResponse = z.object({
   }),
 });
 
-export const zOpinionsRespondBody = z.object({
-  content: z.string().min(1).max(5000),
-});
-
-export const zOpinionsRespondPath = z.object({
-  projectId: z.uuid(),
-  id: z.uuid(),
-});
-
-/**
- * OK
- */
-export const zOpinionsRespondResponse = z.object({
-  ownerResponse: z.object({
-    id: z.string(),
-    reviewId: z.string(),
-    content: z.string(),
-    createdAt: z.iso.datetime(),
-    user: z.object({
-      id: z.string().nullable(),
-      name: z.string(),
-      avatarUrl: z.string().nullable(),
-      isOwner: z.boolean().optional(),
-    }),
-  }),
-});
-
 export const zAnswersListPath = z.object({
-  projectId: z.uuid(),
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 export const zAnswersListQuery = z.object({
@@ -586,10 +871,21 @@ export const zAnswersListQuery = z.object({
   limit: z.int().gte(1).lte(100).optional().default(10),
   sort: z.enum(['newest', 'oldest']).optional().default('newest'),
   query: z.string().max(200).optional().default(''),
-  dateFrom: z.int().gte(0).lte(9007199254740991).optional(),
-  dateTo: z.int().gte(0).lte(9007199254740991).optional(),
-  reviewId: z.uuid().optional(),
-  questionId: z.uuid().optional(),
+  dateFrom: z.int().gte(0).lte(8640000000000000).optional(),
+  dateTo: z.int().gte(0).lte(8640000000000000).optional(),
+  externalUserId: z.string().min(1).max(256).optional(),
+  responseId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    )
+    .optional(),
+  questionId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    )
+    .optional(),
   responseVisibility: z.enum(['all', 'default', 'private']).optional().default('all'),
 });
 
@@ -599,16 +895,20 @@ export const zAnswersListQuery = z.object({
 export const zAnswersListResponse = z.object({
   answers: z.array(
     z.object({
+      externalUserId: z.string().nullable(),
       id: z.string(),
-      reviewId: z.string(),
+      responseId: z.string(),
       questionId: z.string(),
-      reviewTitle: z.string(),
       question: z.string(),
       tags: z.array(z.string()),
       answer: z.string(),
       selectedOptions: z.array(z.string()).optional().default([]),
       responseVisibility: z.enum(['default', 'private']).optional().default('default'),
-      createdAt: z.iso.datetime(),
+      createdAt: z.iso
+        .datetime()
+        .regex(
+          /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+        ),
     }),
   ),
   pagination: z.object({
@@ -619,177 +919,82 @@ export const zAnswersListResponse = z.object({
   }),
 });
 
-export const zSubscribersListPath = z.object({
-  projectId: z.uuid(),
-});
-
-export const zSubscribersListQuery = z.object({
-  page: z.int().gte(1).lte(9007199254740991).optional().default(1),
-  limit: z.int().gte(1).lte(100).optional().default(10),
-  query: z.string().max(200).optional().default(''),
-});
-
-/**
- * OK
- */
-export const zSubscribersListResponse = z.object({
-  subscribers: z.array(
-    z.object({
-      id: z.string(),
-      userId: z.string(),
-      email: z.string(),
-      name: z.string().nullable(),
-      image: z.string().nullable(),
-      banned: z.boolean().nullable(),
-      subscribedAt: z.iso.datetime(),
-    }),
-  ),
-  pagination: z.object({
-    page: z.int().gte(-9007199254740991).lte(9007199254740991),
-    limit: z.int().gte(-9007199254740991).lte(9007199254740991),
-    total: z.int().gte(-9007199254740991).lte(9007199254740991),
-    totalPages: z.int().gte(-9007199254740991).lte(9007199254740991),
-  }),
-});
-
-export const zSubscribersBlockPath = z.object({
-  projectId: z.uuid(),
-  id: z.uuid(),
+export const zSubscribersCountPath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
  * OK
  */
-export const zSubscribersBlockResponse = z.object({
-  success: z.boolean(),
+export const zSubscribersCountResponse = z.object({
+  total: z.int().gte(-9007199254740991).lte(9007199254740991),
+  delta: z.int().gte(-9007199254740991).lte(9007199254740991),
 });
 
-/**
- * OK
- */
-export const zKbGetResponse = z.object({
-  knowledgebase: z
-    .object({
-      organizationId: z.string(),
-      items: z.array(
-        z.object({
-          id: z.string(),
-          organizationId: z.string(),
-          link: z.url().nullable(),
-          title: z.string().nullable(),
-          description: z.string().nullable(),
-          markdown: z.string().nullable(),
-          markdownKey: z.string(),
-          metadataKey: z.string(),
-          contentLength: z.int().gte(0).lte(9007199254740991),
-          createdAt: z.iso.datetime(),
-          updatedAt: z.iso.datetime(),
-        }),
-      ),
-    })
-    .nullable(),
-});
-
-export const zKbAddItemBody = z.object({
-  url: z.url().max(2048).optional(),
-  text: z.string().min(1).max(10000).optional(),
-});
-
-/**
- * OK
- */
-export const zKbAddItemResponse = z.object({
-  item: z.object({
-    id: z.string(),
-    organizationId: z.string(),
-    link: z.url().nullable(),
-    title: z.string().nullable(),
-    description: z.string().nullable(),
-    markdown: z.string().nullable(),
-    markdownKey: z.string(),
-    metadataKey: z.string(),
-    contentLength: z.int().gte(0).lte(9007199254740991),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  }),
-});
-
-export const zKbDeleteItemPath = z.object({
-  id: z.uuid(),
-});
-
-/**
- * OK
- */
-export const zKbDeleteItemResponse = z.object({
-  success: z.boolean(),
-});
-
-export const zKbUpdateItemBody = z.object({
-  url: z.url().max(2048).optional(),
-  text: z.string().min(1).max(10000).optional(),
-});
-
-export const zKbUpdateItemPath = z.object({
-  id: z.uuid(),
-});
-
-/**
- * OK
- */
-export const zKbUpdateItemResponse = z.object({
-  item: z.object({
-    id: z.string(),
-    organizationId: z.string(),
-    link: z.url().nullable(),
-    title: z.string().nullable(),
-    description: z.string().nullable(),
-    markdown: z.string().nullable(),
-    markdownKey: z.string(),
-    metadataKey: z.string(),
-    contentLength: z.int().gte(0).lte(9007199254740991),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  }),
-});
-
-export const zWebhooksPortalBody = z
-  .object({
-    theme: z.enum(['light', 'dark']).optional(),
-  })
-  .default({});
-
-/**
- * OK
- */
-export const zWebhooksPortalResponse = z.object({
-  redirectUrl: z.string(),
-  tenantId: z.string(),
-  topics: z.array(
-    z.object({
-      name: z.enum(['review.opinion.received', 'review.answer.received']),
-      description: z.string(),
-    }),
-  ),
-});
-
-export const zWebhooksUpsertDestinationBody = z.object({
-  url: z.url().max(2048),
-  topics: z
-    .array(z.enum(['review.opinion.received', 'review.answer.received']))
+export const zSubscribersInviteBody = z.object({
+  subscribers: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(120),
+        email: z
+          .email()
+          .max(320)
+          .regex(
+            /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          ),
+      }),
+    )
     .min(1)
-    .max(2)
-    .optional(),
-  destinationId: z.string().min(1).max(200).optional(),
+    .max(100),
+});
+
+export const zSubscribersInvitePath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
 });
 
 /**
  * OK
  */
-export const zWebhooksUpsertDestinationResponse = z.object({
-  destination: z.object({
-    id: z.string(),
-    type: z.literal('webhook'),
-    topics: z.array(z.enum(['review.opinion.received', 'review.answer.received'])),
+export const zSubscribersInviteResponse = z.object({
+  invited: z.array(
+    z.object({
+      name: z.string().min(1).max(120),
+      email: z
+        .email()
+        .max(320)
+        .regex(
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+    }),
+  ),
+  skipped: z.array(
+    z.object({
+      name: z.string().min(1).max(120),
+      email: z
+        .email()
+        .max(320)
+        .regex(
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      reason: z.enum(['already_subscribed', 'already_invited', 'duplicate', 'delivery_failed']),
+    }),
+  ),
+  invitationAllowance: z.object({
+    used: z.int().gte(0).lte(9007199254740991),
+    limit: z.literal(100),
+    remaining: z.int().gte(0).lte(9007199254740991),
+    resetsAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
   }),
 });

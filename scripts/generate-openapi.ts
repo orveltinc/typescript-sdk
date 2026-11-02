@@ -1,12 +1,14 @@
 import type { AnyContractProcedure } from '@orpc/contract';
-import { OpenAPIGenerator } from '@orpc/openapi';
-import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
+import { getOpenAPIMeta } from '@orpc/openapi';
 import {
   contract,
+  getBusinessProcedureMeta,
+  isBusinessSdkExposed,
   type BusinessApiKeyPermission,
-  type BusinessProcedureMeta,
 } from '@pointsy/business-contract';
+import { generateRestOpenApiDocument } from '@pointsy/business-contract/transport';
 import { z } from 'zod';
+import { createOpinionEmbedSessionInputSchema } from '../../storefront-contract/src/schemas/opinion-embeds';
 import { DEFAULT_BUSINESS_API_BASE_URL } from '../src/constants.ts';
 
 const outputUrl = new URL('../openapi.json', import.meta.url);
@@ -22,6 +24,7 @@ interface OpenApiOperation {
 interface OpenApiDocument {
   components?: {
     securitySchemes?: Record<string, unknown>;
+    schemas?: Record<string, unknown>;
     [key: string]: unknown;
   };
   info: {
@@ -37,20 +40,20 @@ interface OpenApiDocument {
 }
 
 function getProcedureMeta(procedure: AnyContractProcedure) {
-  return procedure['~orpc'].meta as BusinessProcedureMeta;
+  return getBusinessProcedureMeta(procedure);
 }
 
 function getApiKeyPermission(procedure: AnyContractProcedure) {
   return getProcedureMeta(procedure).apiKeyPermission;
 }
 
-function isPublicRestProcedure(procedure: AnyContractProcedure) {
+function isSdkProcedure(procedure: AnyContractProcedure) {
   const meta = getProcedureMeta(procedure);
-  return meta.exposeInRest !== false && Boolean(meta.apiKeyPermission);
+  return isBusinessSdkExposed(meta);
 }
 
 function operationKey(procedure: AnyContractProcedure, contractPath: readonly string[]): string {
-  const route = procedure['~orpc'].route;
+  const route = getOpenAPIMeta(procedure) ?? {};
   const method = String(route.method ?? 'POST').toLowerCase();
   const path = route.path ?? `/${contractPath.join('/')}`;
   return `${method} ${path}`;
@@ -67,38 +70,30 @@ function shortenOperationId(operationId: string): string {
 export async function generateBusinessOpenApiDocument(): Promise<OpenApiDocument> {
   const packageJson = (await Bun.file(packageJsonUrl).json()) as { version: string };
   const permissions = new Map<string, BusinessApiKeyPermission>();
-  const generator = new OpenAPIGenerator({
-    schemaConverters: [
-      {
-        condition: (schema: unknown) => schema instanceof z.ZodVoid,
-        convert: (): [boolean, Record<string, never>] => [false, {}],
+  const document = await generateRestOpenApiDocument(contract, {
+    base: {
+      info: {
+        title: 'Orvelt Business SDK',
+        version: packageJson.version,
+        description:
+          'Curated SDK subset of the Business REST API. Every operation requires an organization-wide API key in the x-api-key header.',
       },
-      new ZodToJsonSchemaConverter(),
-    ],
-  });
-
-  const document = (await generator.generate(contract, {
-    info: {
-      title: 'Orvelt Business API',
-      version: packageJson.version,
-      description:
-        'Public REST API for external Orvelt Business integrations. Every operation requires a project-scoped API key in the x-api-key header.',
-    },
-    servers: [{ url: DEFAULT_BUSINESS_API_BASE_URL }],
-    components: {
-      securitySchemes: {
-        businessApiKey: {
-          type: 'apiKey',
-          in: 'header',
-          name: 'x-api-key',
-          description:
-            'Project-scoped Orvelt Business API key. Create keys in Orvelt Business and keep them server-side.',
+      servers: [{ url: DEFAULT_BUSINESS_API_BASE_URL }],
+      components: {
+        securitySchemes: {
+          businessApiKey: {
+            type: 'apiKey',
+            in: 'header',
+            name: 'x-api-key',
+            description:
+              'Organization-wide Orvelt Business API key. Create keys in Orvelt Business and keep them server-side.',
+          },
         },
       },
+      security: [{ businessApiKey: [] }],
     },
-    security: [{ businessApiKey: [] }],
-    filter: ({ contract: procedure, path }) => {
-      if (!isPublicRestProcedure(procedure)) return false;
+    filter: (procedure, path) => {
+      if (!isSdkProcedure(procedure)) return false;
 
       const permission = getApiKeyPermission(procedure);
       if (!permission) return false;
@@ -106,8 +101,24 @@ export async function generateBusinessOpenApiDocument(): Promise<OpenApiDocument
       permissions.set(operationKey(procedure, path), permission);
       return true;
     },
-  })) as OpenApiDocument;
+  });
 
+  // Browser-only embed configuration is generated from the shared schema; it is not a REST
+  // operation and needs no API key. This also keeps the public SDK's vocabulary in sync.
+  document.components ??= {};
+  document.components.schemas ??= {};
+  // Zod's recursive JSON schema uses document-root references. Hoist its definitions into
+  // OpenAPI components before embedding it, otherwise attributes' references point nowhere.
+  const configuration = z.toJSONSchema(createOpinionEmbedSessionInputSchema, {
+    target: 'draft-2020-12',
+  });
+  const { $defs = {}, $schema: _dialect, ...configurationSchema } = configuration;
+  const relocateReferences = (schema: unknown) =>
+    JSON.parse(JSON.stringify(schema).replaceAll('#/$defs/', '#/components/schemas/OpinionEmbed_'));
+  document.components.schemas.OpinionEmbedConfiguration = relocateReferences(configurationSchema);
+  for (const [name, definition] of Object.entries($defs)) {
+    document.components.schemas[`OpinionEmbed_${name}`] = relocateReferences(definition);
+  }
   document.security = [{ businessApiKey: [] }];
   const operationIds = new Set<string>();
 
