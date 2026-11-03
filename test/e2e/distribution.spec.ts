@@ -243,6 +243,23 @@ test('the packed npm entries import in Node without a DOM or workspace dependenc
   );
 });
 
+// Risk: a published tarball can import successfully while its first real request
+// loses authentication or changes the generated error contract in a runtime.
+// Boundary: the installed package's public client, real fetch, and a local HTTP server.
+test('the installed package performs authenticated requests and preserves HTTP errors in Node and Bun', async () => {
+  const source = await readFile(
+    new URL('../support/consumer-runtime.mjs', import.meta.url),
+    'utf8',
+  );
+
+  for (const runtime of ['node', 'bun']) {
+    await run(runtime, ['--input-type=module', '--eval', source], {
+      cwd: consumerDirectory,
+      timeout: 30_000,
+    });
+  }
+});
+
 test('the packed browser script supports script tags, iframe callbacks, cleanup and modals', async ({
   page,
   request,

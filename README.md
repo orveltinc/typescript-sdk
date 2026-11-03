@@ -73,7 +73,7 @@ Once the SDK is published to npm, plain HTML sites can load `https://unpkg.com/@
 
 ### Distribution checks
 
-Release CI builds and packs the SDK, installs the tarball into a separate consumer, checks Node imports without a DOM, and serves the installed browser script at a dedicated test-only HTTP endpoint. Chromium loads that endpoint to exercise repeated loading, mount, readiness, resizing, submission callbacks, unmount and modal close. The iframe in these package checks is a protocol fixture; real opinion submission remains covered by the monorepo's cross-product browser suite.
+Release CI builds and packs the SDK, installs the tarball into separate npm, pnpm, Yarn Classic, Yarn 4, and Bun consumers, and checks authenticated requests and HTTP errors against a local server. Runtime matrices cover Node 20.19, 22, 24, 25, and 26, plus Bun 1.3.3 through selected 1.4 releases. Chromium checks the installed browser script's repeated loading, mount, readiness, resizing, submission callbacks, unmount, and modal close. The iframe is a protocol fixture; real opinion submission remains covered by the monorepo's cross-product browser suite.
 
 The publishing job publishes that exact verified tarball. Stable releases update npm's `latest` tag; prereleases update `next`. No check currently depends on UNPKG or on this package already being published. Once publishing is available, live UNPKG checks can be added to verify CDN delivery separately.
 
@@ -99,6 +99,22 @@ The optional `@orvelt/business/browser` subpath remains available for browser-on
 bun add @orvelt/business
 ```
 
+The published package is ESM and supports Node.js 20.19 or newer and Bun 1.3.3
+or newer. Bun 1.3.3 is the lowest version verified by the installed-consumer
+HTTP test; Bun 1.3.11,
+1.4.0, 1.4.2, and 1.4.4 also pass. It can
+be installed with npm, pnpm, Yarn, or Bun; Bun is used only for this repository's
+contributor tooling and is not required by consumers:
+
+```sh
+npm install @orvelt/business
+pnpm add @orvelt/business
+yarn add @orvelt/business
+```
+
+Node and Bun consumers need an absolute `http://` or `https://` `baseUrl` for
+REST requests. The package has no runtime dependency on the workspace or on Bun.
+
 ## Agent skills
 
 The npm package includes two Agent Skills:
@@ -118,6 +134,8 @@ Use your agent's supported skills directory if it differs. Copy them again after
 Tools can also locate a bundled skill with `import.meta.resolve('@orvelt/business/skills/orvelt-business-sdk/SKILL.md')`. Read the resolved file as Markdown; it is not a JavaScript module.
 
 ## Configure once
+
+In Orvelt Business, open your organization's **API keys** page and create a key. Copy the secret when it is shown; you cannot view it again. Store it in your server's environment as `ORVELT_BUSINESS_API_KEY`, not in browser code or source control. CLI browser login does not configure SDK credentials.
 
 ```ts
 import { orvelt, opinions } from '@orvelt/business';
