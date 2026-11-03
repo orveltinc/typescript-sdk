@@ -234,6 +234,6 @@ jobs:
           set -euo pipefail
           consumer="$(mktemp -d)"
           printf '{"private":true,"type":"module"}\n' > "$consumer/package.json"
-          bun --cwd "$consumer" add --no-save "$GITHUB_WORKSPACE/test/results/orvelt-business.tgz"
+          (cd "$consumer" && bun add --no-save "$GITHUB_WORKSPACE/test/results/orvelt-business.tgz")
           cp test/support/consumer-runtime.mjs "$consumer/consumer-runtime.mjs"
           bun "$consumer/consumer-runtime.mjs"
