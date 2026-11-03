@@ -30,6 +30,8 @@ import type {
   QuestionsListResponses,
   QuestionsUpdateErrors,
   QuestionsUpdateResponses,
+  QuestionsVersionsCreateErrors,
+  QuestionsVersionsCreateResponses,
   SubscribersCountErrors,
   SubscribersCountResponses,
   SubscribersInviteErrors,
@@ -46,6 +48,7 @@ import {
   zQuestionsDeleteResponse,
   zQuestionsListResponse,
   zQuestionsUpdateResponse,
+  zQuestionsVersionsCreateResponse,
   zSubscribersCountResponse,
   zSubscribersInviteResponse,
 } from './zod.gen.js';
@@ -110,8 +113,8 @@ export const questionsCreate = <ThrowOnError extends boolean = false>(
       | 'Outcome'
     >;
     isAutoTags?: boolean;
-    priority: number;
-    isAutoPriority: boolean;
+    priority?: number;
+    isAutoPriority?: boolean;
     question: string;
     answerMode: 'text_only' | 'single_select' | 'multi_select';
     answers?: {
@@ -211,7 +214,7 @@ export const questionsDelete = <ThrowOnError extends boolean = false>(
 /**
  * Update a question
  *
- * Edit, activate, or archive a project question.
+ * Change settings, activate, or archive a question version.
  */
 export const questionsUpdate = <ThrowOnError extends boolean = false>(
   parameters: {
@@ -230,22 +233,6 @@ export const questionsUpdate = <ThrowOnError extends boolean = false>(
     isAutoTags?: boolean;
     priority?: number;
     isAutoPriority?: boolean;
-    question?: string;
-    answerMode?: 'text_only' | 'single_select' | 'multi_select';
-    answers?: {
-      options?: Array<{
-        id: string;
-        option: string;
-        description?: string;
-      }>;
-      allowOther?: boolean;
-      skippable?: boolean;
-      layout?: 'inline' | 'stacked';
-      chipPosition?: 'left' | 'right';
-      otherPlaceholder?: string;
-      freeTextPlaceholder?: string;
-      freeTextMultiline?: boolean;
-    };
     status?: 'active' | 'archived';
   },
   options?: Options<never, ThrowOnError>,
@@ -261,9 +248,6 @@ export const questionsUpdate = <ThrowOnError extends boolean = false>(
           { in: 'body', key: 'isAutoTags' },
           { in: 'body', key: 'priority' },
           { in: 'body', key: 'isAutoPriority' },
-          { in: 'body', key: 'question' },
-          { in: 'body', key: 'answerMode' },
-          { in: 'body', key: 'answers' },
           { in: 'body', key: 'status' },
         ],
       },
@@ -277,6 +261,70 @@ export const questionsUpdate = <ThrowOnError extends boolean = false>(
     responseValidator: async (data) => await zQuestionsUpdateResponse.parseAsync(data),
     security: [{ name: 'x-api-key', type: 'apiKey' }],
     url: '/project/{projectId}/questions/{questionId}',
+    ...options,
+    ...params,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+        ? Object.fromEntries(new Headers(options.headers))
+        : options?.headers),
+      ...params.headers,
+    },
+  });
+};
+
+/**
+ * Create a question version
+ *
+ * Save new wording without changing the original question version.
+ */
+export const questionsVersionsCreate = <ThrowOnError extends boolean = false>(
+  parameters: {
+    projectId: string;
+    questionId: string;
+    tags?: Array<
+      | 'Trust'
+      | 'Reliability'
+      | 'Experience'
+      | 'Safety'
+      | 'Personalization'
+      | 'Fairness'
+      | 'Identity'
+      | 'Outcome'
+    >;
+    isAutoTags?: boolean;
+    priority?: number;
+    isAutoPriority?: boolean;
+    status?: 'active' | 'archived';
+    question: string;
+  },
+  options?: Options<never, ThrowOnError>,
+): RequestResult<QuestionsVersionsCreateResponses, QuestionsVersionsCreateErrors, ThrowOnError> => {
+  const params = buildClientParams(
+    [parameters],
+    [
+      {
+        args: [
+          { in: 'path', key: 'projectId' },
+          { in: 'path', key: 'questionId' },
+          { in: 'body', key: 'tags' },
+          { in: 'body', key: 'isAutoTags' },
+          { in: 'body', key: 'priority' },
+          { in: 'body', key: 'isAutoPriority' },
+          { in: 'body', key: 'status' },
+          { in: 'body', key: 'question' },
+        ],
+      },
+    ],
+  );
+  return (options?.client ?? client).post<
+    QuestionsVersionsCreateResponses,
+    QuestionsVersionsCreateErrors,
+    ThrowOnError
+  >({
+    responseValidator: async (data) => await zQuestionsVersionsCreateResponse.parseAsync(data),
+    security: [{ name: 'x-api-key', type: 'apiKey' }],
+    url: '/project/{projectId}/questions/{questionId}/versions',
     ...options,
     ...params,
     headers: {
@@ -496,6 +544,7 @@ export const answersList = <ThrowOnError extends boolean = false>(
     externalUserId?: string;
     responseId?: string;
     questionId?: string;
+    familyId?: string;
     responseVisibility?: 'all' | 'default' | 'private';
   },
   options?: Options<never, ThrowOnError>,
@@ -515,6 +564,7 @@ export const answersList = <ThrowOnError extends boolean = false>(
           { in: 'query', key: 'externalUserId' },
           { in: 'query', key: 'responseId' },
           { in: 'query', key: 'questionId' },
+          { in: 'query', key: 'familyId' },
           { in: 'query', key: 'responseVisibility' },
         ],
       },

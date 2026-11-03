@@ -43,7 +43,7 @@ describe.skipIf(!hasMonorepoContracts)('public Business OpenAPI document', () =>
 
     const { contract, getBusinessProcedureMeta } = await import(contractUrl.href);
     expect(operations).toHaveLength(countApiKeyProcedures(contract, getBusinessProcedureMeta));
-    expect(operations).toHaveLength(12);
+    expect(operations).toHaveLength(13);
     expect(operations.map(({ operation }) => operation.operationId).toSorted()).toEqual([
       'answers.list',
       'link.create',
@@ -55,6 +55,7 @@ describe.skipIf(!hasMonorepoContracts)('public Business OpenAPI document', () =>
       'questions.delete',
       'questions.list',
       'questions.update',
+      'questions.versions.create',
       'subscribers.count',
       'subscribers.invite',
     ]);

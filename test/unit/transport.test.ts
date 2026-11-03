@@ -12,6 +12,8 @@ const projectId = '019a0000-0000-7000-8000-000000000001';
 const questionId = '019a0000-0000-7000-8000-000000000002';
 const question = {
   id: questionId,
+  familyId: questionId,
+  version: 1,
   question: 'How was your visit?',
   answerMode: 'text_only' as const,
   answers: { skippable: false, freeTextMultiline: false },
@@ -45,11 +47,17 @@ describe('generated REST transport', () => {
         requests.push(request);
         return Response.json({ question });
       });
-      const { id: _id, createdAt: _createdAt, ...body } = question;
-      const { responseVisibility: _responseVisibility, ...updateBody } = body;
+      const {
+        id: _id,
+        familyId: _familyId,
+        version: _version,
+        createdAt: _createdAt,
+        ...body
+      } = question;
+      const updateBody = { priority: 60, status: 'active' as const };
       const created = await questions.create({ projectId, ...body }, { client, headers });
       const updated = await questions.update(
-        { projectId, questionId, ...body },
+        { projectId, questionId, ...updateBody },
         { client, headers },
       );
       expect(created.error).toBeUndefined();
@@ -73,7 +81,7 @@ describe('generated REST transport', () => {
     });
     client.setConfig({ headers: { 'x-remove': 'old', 'x-keep': 'retained' } });
     const result = await questions.update(
-      { projectId, questionId, question: 'Updated' },
+      { projectId, questionId, priority: 60 },
       {
         client,
         headers: { 'x-remove': null, 'Content-Type': null },
@@ -97,7 +105,7 @@ describe('generated REST transport', () => {
       ['x-values', 'two'],
     ];
     await subscribers.count({ projectId }, { client, headers });
-    await questions.update({ projectId, questionId, question: 'Updated' }, { client, headers });
+    await questions.update({ projectId, questionId, priority: 60 }, { client, headers });
     expect(requests.map((request) => request.headers.get('x-values'))).toEqual([
       'one, two',
       'one, two',

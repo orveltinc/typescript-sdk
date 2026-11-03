@@ -198,6 +198,14 @@ export type QuestionsListResponses = {
   200: {
     questions: Array<{
       id: string;
+      /**
+       * Stable identity shared by every wording version of this question.
+       */
+      familyId: string;
+      /**
+       * Wording version number within this question.
+       */
+      version: number;
       question: string;
       answerMode: 'text_only' | 'single_select' | 'multi_select';
       answers: {
@@ -251,11 +259,11 @@ export type QuestionsCreateData = {
       | 'Outcome'
     >;
     /**
-     * When true, Orvelt chooses the tags from the question and its options whenever they change. Sending `tags` turns it off.
+     * Defaults to true when tags are omitted. Sending tags selects manual tagging.
      */
     isAutoTags?: boolean;
-    priority: number;
-    isAutoPriority: boolean;
+    priority?: number;
+    isAutoPriority?: boolean;
     question: string;
     answerMode: 'text_only' | 'single_select' | 'multi_select';
     answers?: {
@@ -325,6 +333,14 @@ export type QuestionsCreateResponses = {
   200: {
     question: {
       id: string;
+      /**
+       * Stable identity shared by every wording version of this question.
+       */
+      familyId: string;
+      /**
+       * Wording version number within this question.
+       */
+      version: number;
       question: string;
       answerMode: 'text_only' | 'single_select' | 'multi_select';
       answers: {
@@ -435,22 +451,6 @@ export type QuestionsUpdateData = {
     isAutoTags?: boolean;
     priority?: number;
     isAutoPriority?: boolean;
-    question?: string;
-    answerMode?: 'text_only' | 'single_select' | 'multi_select';
-    answers?: {
-      options?: Array<{
-        id: string;
-        option: string;
-        description?: string;
-      }>;
-      allowOther?: boolean;
-      skippable?: boolean;
-      layout?: 'inline' | 'stacked';
-      chipPosition?: 'left' | 'right';
-      otherPlaceholder?: string;
-      freeTextPlaceholder?: string;
-      freeTextMultiline?: boolean;
-    };
     status?: 'active' | 'archived';
   };
   path: {
@@ -501,6 +501,14 @@ export type QuestionsUpdateResponses = {
   200: {
     question: {
       id: string;
+      /**
+       * Stable identity shared by every wording version of this question.
+       */
+      familyId: string;
+      /**
+       * Wording version number within this question.
+       */
+      version: number;
       question: string;
       answerMode: 'text_only' | 'single_select' | 'multi_select';
       answers: {
@@ -538,6 +546,123 @@ export type QuestionsUpdateResponses = {
 };
 
 export type QuestionsUpdateResponse = QuestionsUpdateResponses[keyof QuestionsUpdateResponses];
+
+export type QuestionsVersionsCreateData = {
+  body: {
+    tags?: Array<
+      | 'Trust'
+      | 'Reliability'
+      | 'Experience'
+      | 'Safety'
+      | 'Personalization'
+      | 'Fairness'
+      | 'Identity'
+      | 'Outcome'
+    >;
+    /**
+     * When true, Orvelt chooses the tags from the question and its options whenever they change. Sending `tags` turns it off.
+     */
+    isAutoTags?: boolean;
+    priority?: number;
+    isAutoPriority?: boolean;
+    status?: 'active' | 'archived';
+    question: string;
+  };
+  path: {
+    projectId: string;
+    questionId: string;
+  };
+  query?: never;
+  url: '/project/{projectId}/questions/{questionId}/versions';
+};
+
+export type QuestionsVersionsCreateErrors = {
+  /**
+   * Invalid request.
+   */
+  400: Http400Error;
+  /**
+   * Authentication is required.
+   */
+  401: Http401Error;
+  /**
+   * You do not have permission to perform this action., This action would exceed the current plan limit.
+   */
+  403: Http403Error;
+  /**
+   * The requested resource was not found.
+   */
+  404: Http404Error;
+  /**
+   * The requested resource has changed.
+   */
+  409: Http409Error;
+  /**
+   * Too many requests., A delivery link was already emailed to this customer recently.
+   */
+  429: Http429Error;
+  /**
+   * The service is temporarily unavailable.
+   */
+  503: Http503Error;
+};
+
+export type QuestionsVersionsCreateError =
+  QuestionsVersionsCreateErrors[keyof QuestionsVersionsCreateErrors];
+
+export type QuestionsVersionsCreateResponses = {
+  /**
+   * OK
+   */
+  200: {
+    question: {
+      id: string;
+      /**
+       * Stable identity shared by every wording version of this question.
+       */
+      familyId: string;
+      /**
+       * Wording version number within this question.
+       */
+      version: number;
+      question: string;
+      answerMode: 'text_only' | 'single_select' | 'multi_select';
+      answers: {
+        options?: Array<{
+          id: string;
+          option: string;
+          description?: string;
+        }>;
+        allowOther?: boolean;
+        skippable?: boolean;
+        layout?: 'inline' | 'stacked';
+        chipPosition?: 'left' | 'right';
+        otherPlaceholder?: string;
+        freeTextPlaceholder?: string;
+        freeTextMultiline?: boolean;
+      };
+      tags: Array<
+        | 'Trust'
+        | 'Reliability'
+        | 'Experience'
+        | 'Safety'
+        | 'Personalization'
+        | 'Fairness'
+        | 'Identity'
+        | 'Outcome'
+      >;
+      priority: number;
+      isAutoPriority: boolean;
+      isAutoTags: boolean;
+      status: 'active' | 'archived';
+      responseVisibility: 'default' | 'private';
+      createdAt: string;
+    };
+  };
+};
+
+export type QuestionsVersionsCreateResponse =
+  QuestionsVersionsCreateResponses[keyof QuestionsVersionsCreateResponses];
 
 export type LinkListData = {
   body?: never;
@@ -952,6 +1077,7 @@ export type AnswersListData = {
     externalUserId?: string;
     responseId?: string;
     questionId?: string;
+    familyId?: string;
     responseVisibility?: 'all' | 'default' | 'private';
   };
   url: '/project/{projectId}/answers';
@@ -1000,6 +1126,11 @@ export type AnswersListResponses = {
       id: string;
       responseId: string;
       questionId: string;
+      /**
+       * Shared by every wording version of the answered question.
+       */
+      familyId: string;
+      questionVersion: number;
       question: string;
       tags: Array<string>;
       answer: string;

@@ -26,12 +26,14 @@ describe('SDK generation invariants', () => {
     );
     expect(Object.keys(generated).toSorted()).toEqual(names.toSorted());
     for (const id of operations) {
-      const [group, method] = id.split('.') as [keyof typeof api.project, string];
-      const resource = api.project[group] as Record<string, unknown>;
+      // Nested groups such as questions.versions.create resolve segment by segment.
+      const resolved = (id as string)
+        .split('.')
+        .reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], api.project);
       const name = id.replace(/\.([a-z])/g, (_match: string, letter: string) =>
         letter.toUpperCase(),
       );
-      expect(resource[method]).toBe(exportedOperations[name]);
+      expect(resolved).toBe(exportedOperations[name]);
     }
   });
 

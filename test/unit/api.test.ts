@@ -76,7 +76,9 @@ describe('grouped Business SDK API', () => {
   });
 
   it('exposes every operation under its resource', () => {
-    expectFunctions(questions, ['list', 'create', 'update', 'delete']);
+    const { versions, ...questionOperations } = questions;
+    expectFunctions(questionOperations, ['list', 'create', 'update', 'delete']);
+    expectFunctions(versions, ['create']);
     expectFunctions(link, ['list', 'create', 'resend']);
     expectFunctions(qr, ['display']);
     expectFunctions(opinions, ['list']);
@@ -96,7 +98,9 @@ describe('grouped Business SDK API', () => {
   it('creates a project-scoped facade without project parameters', () => {
     const scopedProject = useProject(projectId);
 
-    expectFunctions(scopedProject.questions, ['list', 'create', 'update', 'delete']);
+    const { versions, ...questionOperations } = scopedProject.questions;
+    expectFunctions(questionOperations, ['list', 'create', 'update', 'delete']);
+    expectFunctions(versions, ['create']);
     expectFunctions(scopedProject.link, ['list', 'create', 'resend']);
     expectFunctions(scopedProject.qr, ['display']);
     expectFunctions(scopedProject.opinions, ['list']);
