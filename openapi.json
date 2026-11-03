@@ -562,6 +562,18 @@
                           "id": {
                             "type": "string"
                           },
+                          "familyId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                            "description": "Stable identity shared by every wording version of this question."
+                          },
+                          "version": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Wording version number within this question."
+                          },
                           "question": {
                             "type": "string"
                           },
@@ -686,6 +698,8 @@
                         },
                         "required": [
                           "id",
+                          "familyId",
+                          "version",
                           "question",
                           "answerMode",
                           "answers",
@@ -844,15 +858,17 @@
                     }
                   },
                   "isAutoTags": {
-                    "type": "boolean",
-                    "description": "When true, Orvelt chooses the tags from the question and its options whenever they change. Sending `tags` turns it off."
+                    "description": "Defaults to true when tags are omitted. Sending tags selects manual tagging.",
+                    "type": "boolean"
                   },
                   "priority": {
+                    "default": 50,
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 100
                   },
                   "isAutoPriority": {
+                    "default": true,
                     "type": "boolean"
                   },
                   "question": {
@@ -950,8 +966,6 @@
                   }
                 },
                 "required": [
-                  "priority",
-                  "isAutoPriority",
                   "question",
                   "answerMode",
                   "status",
@@ -974,6 +988,18 @@
                       "properties": {
                         "id": {
                           "type": "string"
+                        },
+                        "familyId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                          "description": "Stable identity shared by every wording version of this question."
+                        },
+                        "version": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Wording version number within this question."
                         },
                         "question": {
                           "type": "string"
@@ -1099,6 +1125,8 @@
                       },
                       "required": [
                         "id",
+                        "familyId",
+                        "version",
                         "question",
                         "answerMode",
                         "answers",
@@ -1205,7 +1233,7 @@
       "patch": {
         "operationId": "questions.update",
         "summary": "Update a question",
-        "description": "Edit, activate, or archive a project question.",
+        "description": "Change settings, activate, or archive a question version.",
         "tags": [
           "Project Questions"
         ],
@@ -1266,83 +1294,6 @@
                   "isAutoPriority": {
                     "type": "boolean"
                   },
-                  "question": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 500
-                  },
-                  "answerMode": {
-                    "type": "string",
-                    "enum": [
-                      "text_only",
-                      "single_select",
-                      "multi_select"
-                    ]
-                  },
-                  "answers": {
-                    "type": "object",
-                    "properties": {
-                      "options": {
-                        "minItems": 2,
-                        "maxItems": 6,
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 64
-                            },
-                            "option": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 200
-                            },
-                            "description": {
-                              "type": "string",
-                              "maxLength": 200
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "option"
-                          ]
-                        }
-                      },
-                      "allowOther": {
-                        "type": "boolean"
-                      },
-                      "skippable": {
-                        "type": "boolean"
-                      },
-                      "layout": {
-                        "type": "string",
-                        "enum": [
-                          "inline",
-                          "stacked"
-                        ]
-                      },
-                      "chipPosition": {
-                        "type": "string",
-                        "enum": [
-                          "left",
-                          "right"
-                        ]
-                      },
-                      "otherPlaceholder": {
-                        "type": "string",
-                        "maxLength": 120
-                      },
-                      "freeTextPlaceholder": {
-                        "type": "string",
-                        "maxLength": 120
-                      },
-                      "freeTextMultiline": {
-                        "type": "boolean"
-                      }
-                    }
-                  },
                   "status": {
                     "type": "string",
                     "enum": [
@@ -1368,6 +1319,18 @@
                       "properties": {
                         "id": {
                           "type": "string"
+                        },
+                        "familyId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                          "description": "Stable identity shared by every wording version of this question."
+                        },
+                        "version": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Wording version number within this question."
                         },
                         "question": {
                           "type": "string"
@@ -1493,6 +1456,8 @@
                       },
                       "required": [
                         "id",
+                        "familyId",
+                        "version",
                         "question",
                         "answerMode",
                         "answers",
@@ -1721,6 +1686,347 @@
         "x-api-key-permission": {
           "resource": "questions",
           "action": "delete"
+        }
+      }
+    },
+    "/project/{projectId}/questions/{questionId}/versions": {
+      "post": {
+        "operationId": "questions.versions.create",
+        "summary": "Create a question version",
+        "description": "Save new wording without changing the original question version.",
+        "tags": [
+          "Project Questions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "required": true,
+            "name": "projectId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "in": "path",
+            "required": true,
+            "name": "questionId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tags": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "Trust",
+                        "Reliability",
+                        "Experience",
+                        "Safety",
+                        "Personalization",
+                        "Fairness",
+                        "Identity",
+                        "Outcome"
+                      ]
+                    }
+                  },
+                  "isAutoTags": {
+                    "type": "boolean",
+                    "description": "When true, Orvelt chooses the tags from the question and its options whenever they change. Sending `tags` turns it off."
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "isAutoPriority": {
+                    "type": "boolean"
+                  },
+                  "status": {
+                    "default": "archived",
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "archived"
+                    ]
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "question"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "familyId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                          "description": "Stable identity shared by every wording version of this question."
+                        },
+                        "version": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Wording version number within this question."
+                        },
+                        "question": {
+                          "type": "string"
+                        },
+                        "answerMode": {
+                          "type": "string",
+                          "enum": [
+                            "text_only",
+                            "single_select",
+                            "multi_select"
+                          ]
+                        },
+                        "answers": {
+                          "type": "object",
+                          "properties": {
+                            "options": {
+                              "minItems": 2,
+                              "maxItems": 6,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64
+                                  },
+                                  "option": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  },
+                                  "description": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "option"
+                                ]
+                              }
+                            },
+                            "allowOther": {
+                              "type": "boolean"
+                            },
+                            "skippable": {
+                              "type": "boolean"
+                            },
+                            "layout": {
+                              "type": "string",
+                              "enum": [
+                                "inline",
+                                "stacked"
+                              ]
+                            },
+                            "chipPosition": {
+                              "type": "string",
+                              "enum": [
+                                "left",
+                                "right"
+                              ]
+                            },
+                            "otherPlaceholder": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "freeTextPlaceholder": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "freeTextMultiline": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "Trust",
+                              "Reliability",
+                              "Experience",
+                              "Safety",
+                              "Personalization",
+                              "Fairness",
+                              "Identity",
+                              "Outcome"
+                            ]
+                          }
+                        },
+                        "priority": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "isAutoPriority": {
+                          "type": "boolean"
+                        },
+                        "isAutoTags": {
+                          "type": "boolean"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "archived"
+                          ]
+                        },
+                        "responseVisibility": {
+                          "type": "string",
+                          "enum": [
+                            "default",
+                            "private"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "familyId",
+                        "version",
+                        "question",
+                        "answerMode",
+                        "answers",
+                        "tags",
+                        "priority",
+                        "isAutoPriority",
+                        "isAutoTags",
+                        "status",
+                        "responseVisibility",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "question"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http400Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http401Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have permission to perform this action., This action would exceed the current plan limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http403Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http404Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The requested resource has changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http409Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests., A delivery link was already emailed to this customer recently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http429Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The service is temporarily unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Http503Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "businessApiKey": []
+          }
+        ],
+        "x-api-key-permission": {
+          "resource": "questions",
+          "action": "update"
         }
       }
     },
@@ -3396,6 +3702,17 @@
           },
           {
             "in": "query",
+            "name": "familyId",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": false
+          },
+          {
+            "in": "query",
             "name": "responseVisibility",
             "schema": {
               "default": "all",
@@ -3438,6 +3755,15 @@
                           "questionId": {
                             "type": "string"
                           },
+                          "familyId": {
+                            "type": "string",
+                            "description": "Shared by every wording version of the answered question."
+                          },
+                          "questionVersion": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "question": {
                             "type": "string"
                           },
@@ -3476,6 +3802,8 @@
                           "id",
                           "responseId",
                           "questionId",
+                          "familyId",
+                          "questionVersion",
                           "question",
                           "tags",
                           "answer",

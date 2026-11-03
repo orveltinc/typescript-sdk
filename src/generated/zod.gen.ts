@@ -190,6 +190,12 @@ export const zQuestionsListResponse = z.object({
   questions: z.array(
     z.object({
       id: z.string(),
+      familyId: z
+        .uuid()
+        .regex(
+          /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+        ),
+      version: z.int().gt(0).lte(9007199254740991),
       question: z.string(),
       answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
       answers: z.object({
@@ -257,8 +263,8 @@ export const zQuestionsCreateBody = z.object({
     .min(1)
     .optional(),
   isAutoTags: z.boolean().optional(),
-  priority: z.int().gte(1).lte(100),
-  isAutoPriority: z.boolean(),
+  priority: z.int().gte(1).lte(100).optional().default(50),
+  isAutoPriority: z.boolean().optional().default(true),
   question: z.string().min(1).max(500),
   answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
   answers: z
@@ -302,6 +308,12 @@ export const zQuestionsCreatePath = z.object({
 export const zQuestionsCreateResponse = z.object({
   question: z.object({
     id: z.string(),
+    familyId: z
+      .uuid()
+      .regex(
+        /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+      ),
+    version: z.int().gt(0).lte(9007199254740991),
     question: z.string(),
     answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
     answers: z.object({
@@ -388,30 +400,6 @@ export const zQuestionsUpdateBody = z.object({
   isAutoTags: z.boolean().optional(),
   priority: z.int().gte(1).lte(100).optional(),
   isAutoPriority: z.boolean().optional(),
-  question: z.string().min(1).max(500).optional(),
-  answerMode: z.enum(['text_only', 'single_select', 'multi_select']).optional(),
-  answers: z
-    .object({
-      options: z
-        .array(
-          z.object({
-            id: z.string().min(1).max(64),
-            option: z.string().min(1).max(200),
-            description: z.string().max(200).optional(),
-          }),
-        )
-        .min(2)
-        .max(6)
-        .optional(),
-      allowOther: z.boolean().optional(),
-      skippable: z.boolean().optional(),
-      layout: z.enum(['inline', 'stacked']).optional(),
-      chipPosition: z.enum(['left', 'right']).optional(),
-      otherPlaceholder: z.string().max(120).optional(),
-      freeTextPlaceholder: z.string().max(120).optional(),
-      freeTextMultiline: z.boolean().optional(),
-    })
-    .optional(),
   status: z.enum(['active', 'archived']).optional(),
 });
 
@@ -434,6 +422,107 @@ export const zQuestionsUpdatePath = z.object({
 export const zQuestionsUpdateResponse = z.object({
   question: z.object({
     id: z.string(),
+    familyId: z
+      .uuid()
+      .regex(
+        /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+      ),
+    version: z.int().gt(0).lte(9007199254740991),
+    question: z.string(),
+    answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
+    answers: z.object({
+      options: z
+        .array(
+          z.object({
+            id: z.string().min(1).max(64),
+            option: z.string().min(1).max(200),
+            description: z.string().max(200).optional(),
+          }),
+        )
+        .min(2)
+        .max(6)
+        .optional(),
+      allowOther: z.boolean().optional(),
+      skippable: z.boolean().optional(),
+      layout: z.enum(['inline', 'stacked']).optional(),
+      chipPosition: z.enum(['left', 'right']).optional(),
+      otherPlaceholder: z.string().max(120).optional(),
+      freeTextPlaceholder: z.string().max(120).optional(),
+      freeTextMultiline: z.boolean().optional(),
+    }),
+    tags: z.array(
+      z.enum([
+        'Trust',
+        'Reliability',
+        'Experience',
+        'Safety',
+        'Personalization',
+        'Fairness',
+        'Identity',
+        'Outcome',
+      ]),
+    ),
+    priority: z.int().gte(1).lte(100),
+    isAutoPriority: z.boolean(),
+    isAutoTags: z.boolean(),
+    status: z.enum(['active', 'archived']),
+    responseVisibility: z.enum(['default', 'private']),
+    createdAt: z.iso
+      .datetime()
+      .regex(
+        /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
+      ),
+  }),
+});
+
+export const zQuestionsVersionsCreateBody = z.object({
+  tags: z
+    .array(
+      z.enum([
+        'Trust',
+        'Reliability',
+        'Experience',
+        'Safety',
+        'Personalization',
+        'Fairness',
+        'Identity',
+        'Outcome',
+      ]),
+    )
+    .min(1)
+    .optional(),
+  isAutoTags: z.boolean().optional(),
+  priority: z.int().gte(1).lte(100).optional(),
+  isAutoPriority: z.boolean().optional(),
+  status: z.enum(['active', 'archived']).optional().default('archived'),
+  question: z.string().min(1).max(500),
+});
+
+export const zQuestionsVersionsCreatePath = z.object({
+  projectId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  questionId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+});
+
+/**
+ * OK
+ */
+export const zQuestionsVersionsCreateResponse = z.object({
+  question: z.object({
+    id: z.string(),
+    familyId: z
+      .uuid()
+      .regex(
+        /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+      ),
+    version: z.int().gt(0).lte(9007199254740991),
     question: z.string(),
     answerMode: z.enum(['text_only', 'single_select', 'multi_select']),
     answers: z.object({
@@ -886,6 +975,12 @@ export const zAnswersListQuery = z.object({
       /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
     )
     .optional(),
+  familyId: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    )
+    .optional(),
   responseVisibility: z.enum(['all', 'default', 'private']).optional().default('all'),
 });
 
@@ -899,6 +994,8 @@ export const zAnswersListResponse = z.object({
       id: z.string(),
       responseId: z.string(),
       questionId: z.string(),
+      familyId: z.string(),
+      questionVersion: z.int().gt(0).lte(9007199254740991),
       question: z.string(),
       tags: z.array(z.string()),
       answer: z.string(),

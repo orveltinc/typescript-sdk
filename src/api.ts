@@ -9,6 +9,7 @@ import {
   questionsDelete,
   questionsList,
   questionsUpdate,
+  questionsVersionsCreate,
   subscribersCount,
   subscribersInvite,
   type Options,
@@ -20,6 +21,7 @@ export const questions = {
   create: questionsCreate,
   update: questionsUpdate,
   delete: questionsDelete,
+  versions: { create: questionsVersionsCreate },
 } as const;
 
 export const link = {
@@ -68,6 +70,12 @@ export function useProject(projectId: string) {
         parameters: Omit<Parameters<typeof questionsDelete>[0], 'projectId'>,
         options?: Options<never, ThrowOnError>,
       ) => questionsDelete({ ...parameters, projectId }, options),
+      versions: {
+        create: <ThrowOnError extends boolean = false>(
+          parameters: Omit<Parameters<typeof questionsVersionsCreate>[0], 'projectId'>,
+          options?: Options<never, ThrowOnError>,
+        ) => questionsVersionsCreate({ ...parameters, projectId }, options),
+      },
     },
     link: {
       list: <ThrowOnError extends boolean = false>(
