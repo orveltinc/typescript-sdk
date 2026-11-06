@@ -685,7 +685,7 @@ export const zLinkCreateBody = z.object({
     ),
   customerFirstName: z.string().min(1).max(100),
   customerLastName: z.string().min(1).max(100).optional(),
-  customerReference: z.string().min(1).max(255).optional(),
+  customerReference: z.string().min(1).max(255),
   sendEmail: z.boolean().optional().default(true),
 });
 

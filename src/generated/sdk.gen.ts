@@ -388,7 +388,7 @@ export const linkCreate = <ThrowOnError extends boolean = false>(
     customerEmail: string;
     customerFirstName: string;
     customerLastName?: string;
-    customerReference?: string;
+    customerReference: string;
     sendEmail?: boolean;
   },
   options?: Options<never, ThrowOnError>,

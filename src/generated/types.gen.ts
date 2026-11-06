@@ -755,7 +755,7 @@ export type LinkCreateData = {
     customerEmail: string;
     customerFirstName: string;
     customerLastName?: string;
-    customerReference?: string;
+    customerReference: string;
     sendEmail?: boolean;
   };
   path: {

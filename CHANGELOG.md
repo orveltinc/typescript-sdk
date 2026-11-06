@@ -1,3 +1,15 @@
+## @orvelt/business@0.1.8
+
+### Required customer reference for links, and question versions
+
+#### Links require a customer reference
+
+`link.create` now requires `customerReference`, matching what the Business API already expects. Pass your own identifier for the customer, such as an order number, when you create a preverified link.
+
+#### Create a new question version
+
+`questions.versions.create` publishes new wording for a question as a new version. Earlier answers stay attached to the wording they were given for.
+
 ## @orvelt/business@0.1.7
 
 ### First public release of the TypeScript SDK

@@ -32,6 +32,7 @@ describe('preverified-link creation', () => {
       const parameters = {
         customerEmail: 'customer@example.com',
         customerFirstName: 'Alex',
+        customerReference: 'crm-42',
         ...(sendEmail === undefined ? {} : { sendEmail }),
       };
       const result = await useProject(projectId).link.create(parameters, { client });

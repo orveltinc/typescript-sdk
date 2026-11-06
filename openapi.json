@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "Orvelt Business SDK",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "Curated SDK subset of the Business REST API. Every operation requires an organization-wide API key in the x-api-key header."
   },
   "servers": [
@@ -2084,7 +2084,8 @@
                 },
                 "required": [
                   "customerEmail",
-                  "customerFirstName"
+                  "customerFirstName",
+                  "customerReference"
                 ]
               }
             }
