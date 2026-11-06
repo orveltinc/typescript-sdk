@@ -1,6 +1,6 @@
 {
   "name": "@orvelt/business",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Orvelt Business REST SDK and frontend-only opinion iframe SDK.",
   "license": "Apache-2.0",
   "author": "Orvelt Inc.",
