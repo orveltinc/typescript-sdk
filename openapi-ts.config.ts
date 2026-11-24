@@ -39,6 +39,9 @@ export function createBusinessSdkGeneratorConfig(outputPath = defaultOutputPath)
       },
       {
         name: '@hey-api/sdk',
+        // One generated class with a group per resource: `orvelt.link.create(...)`. `Orvelt` in
+        // src/orvelt.ts extends it to take the API key.
+        operations: { strategy: 'single', containerName: 'OrveltSdk', nesting: 'operationId' },
         paramsStructure: 'flat',
         validator: { response: 'zod' },
       },

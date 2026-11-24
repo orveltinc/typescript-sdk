@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { ZodError } from 'zod';
-import {
-  createBusinessClient,
-  questions,
-  subscribers,
-  useProject,
-  type SubscribersCountResponse,
-} from '../../src/index.ts';
+import { Orvelt, type OrveltOptions, type SubscribersCountResponse } from '../../src/index.ts';
 
 const projectId = '019a0000-0000-7000-8000-000000000001';
 const questionId = '019a0000-0000-7000-8000-000000000002';
@@ -26,8 +20,12 @@ const question = {
   createdAt: '2026-10-11T00:00:00.000Z',
 };
 
-function responseClient(respond: (request: Request) => Response | Promise<Response>) {
-  return createBusinessClient({
+function responseClient(
+  respond: (request: Request) => Response | Promise<Response>,
+  options: Pick<OrveltOptions, 'headers'> = {},
+) {
+  return new Orvelt({
+    ...options,
     apiKey: 'ov_transport_test',
     baseUrl: 'https://example.test/v1',
     fetch: (async (input: URL | RequestInfo, init?: RequestInit) =>
@@ -43,7 +41,7 @@ describe('generated REST transport', () => {
   ]) {
     it(`preserves ${headers.constructor.name} request headers on POST and PATCH`, async () => {
       const requests: Request[] = [];
-      const client = responseClient((request) => {
+      const orvelt = responseClient((request) => {
         requests.push(request);
         return Response.json({ question });
       });
@@ -55,10 +53,10 @@ describe('generated REST transport', () => {
         ...body
       } = question;
       const updateBody = { priority: 60, status: 'active' as const };
-      const created = await questions.create({ projectId, ...body }, { client, headers });
-      const updated = await questions.update(
+      const created = await orvelt.questions.create({ projectId, ...body }, { headers });
+      const updated = await orvelt.questions.update(
         { projectId, questionId, ...updateBody },
-        { client, headers },
+        { headers },
       );
       expect(created.error).toBeUndefined();
       expect(updated.error).toBeUndefined();
@@ -75,17 +73,16 @@ describe('generated REST transport', () => {
 
   it('keeps record null values as deletions, including Content-Type', async () => {
     let captured: Request | undefined;
-    const client = responseClient((request) => {
-      captured = request;
-      return Response.json({ question });
-    });
-    client.setConfig({ headers: { 'x-remove': 'old', 'x-keep': 'retained' } });
-    const result = await questions.update(
-      { projectId, questionId, priority: 60 },
-      {
-        client,
-        headers: { 'x-remove': null, 'Content-Type': null },
+    const orvelt = responseClient(
+      (request) => {
+        captured = request;
+        return Response.json({ question });
       },
+      { headers: { 'x-remove': 'old', 'x-keep': 'retained' } },
+    );
+    const result = await orvelt.questions.update(
+      { projectId, questionId, priority: 60 },
+      { headers: { 'x-remove': null, 'Content-Type': null } },
     );
     expect(result.error).toBeUndefined();
     expect(captured?.headers.has('x-remove')).toBe(false);
@@ -96,7 +93,7 @@ describe('generated REST transport', () => {
 
   it('combines repeated tuple headers using native Headers semantics on GET and PATCH', async () => {
     const requests: Request[] = [];
-    const client = responseClient((request) => {
+    const orvelt = responseClient((request) => {
       requests.push(request);
       return Response.json(request.method === 'GET' ? { total: 0, delta: 0 } : { question });
     });
@@ -104,8 +101,8 @@ describe('generated REST transport', () => {
       ['x-values', 'one'],
       ['x-values', 'two'],
     ];
-    await subscribers.count({ projectId }, { client, headers });
-    await questions.update({ projectId, questionId, priority: 60 }, { client, headers });
+    await orvelt.subscribers.count({ projectId }, { headers });
+    await orvelt.questions.update({ projectId, questionId, priority: 60 }, { headers });
     expect(requests.map((request) => request.headers.get('x-values'))).toEqual([
       'one, two',
       'one, two',
@@ -113,19 +110,19 @@ describe('generated REST transport', () => {
   });
 
   it('rejects malformed successful JSON instead of exposing invalid typed data', async () => {
-    const client = responseClient(() => Response.json({ total: 'not a number', delta: 0 }));
-    const result = await subscribers.count({ projectId }, { client });
+    const orvelt = responseClient(() => Response.json({ total: 'not a number', delta: 0 }));
+    const result = await orvelt.subscribers.count({ projectId });
     expect(result.data).toBeUndefined();
     expect(result.error).toBeInstanceOf(ZodError);
     expect(result.response?.status).toBe(200);
     await expect(
-      subscribers.count({ projectId }, { client, throwOnError: true }),
+      orvelt.subscribers.count({ projectId }, { throwOnError: true }),
     ).rejects.toBeInstanceOf(ZodError);
   });
 
   it('preserves throwOnError inference through the project facade', async () => {
-    const client = responseClient(() => Response.json({ total: 1, delta: -1 }));
-    const result = await useProject(projectId).subscribers.count({ client, throwOnError: true });
+    const orvelt = responseClient(() => Response.json({ total: 1, delta: -1 }));
+    const result = await orvelt.subscribers.count({ projectId }, { throwOnError: true });
     // This assignment also verifies that the facade does not widen the generic to boolean.
     const data: SubscribersCountResponse = result.data;
     expect(data).toEqual({ total: 1, delta: -1 });
@@ -142,17 +139,17 @@ describe('generated REST transport', () => {
     it(`returns and throws the original ${code} payload without retrying a mutation`, async () => {
       let calls = 0;
       const error = { defined: true, code, status, message: 'Try later.', data };
-      const client = responseClient(() => {
+      const orvelt = responseClient(() => {
         calls++;
         return Response.json(error, { status, headers: { 'retry-after': '60' } });
       });
-      const result = await questions.delete({ projectId, questionId }, { client });
+      const result = await orvelt.questions.delete({ projectId, questionId });
       expect(result.data).toBeUndefined();
       expect<unknown>(result.error).toEqual(error);
       expect(result.response?.headers.get('retry-after')).toBe('60');
       expect(calls).toBe(1);
       await expect(
-        questions.delete({ projectId, questionId }, { client, throwOnError: true }),
+        orvelt.questions.delete({ projectId, questionId }, { throwOnError: true }),
       ).rejects.toEqual(error);
       expect(calls).toBe(2);
     });
@@ -160,12 +157,12 @@ describe('generated REST transport', () => {
 
   it('returns network errors without assuming a response exists', async () => {
     const error = new TypeError('Network unavailable');
-    const client = responseClient(() => Promise.reject(error));
-    const result = await subscribers.count({ projectId }, { client });
+    const orvelt = responseClient(() => Promise.reject(error));
+    const result = await orvelt.subscribers.count({ projectId });
     expect<unknown>(result.error).toBe(error);
     expect(result.request).toBeInstanceOf(Request);
     expect(result.response).toBeUndefined();
-    await expect(subscribers.count({ projectId }, { client, throwOnError: true })).rejects.toBe(
+    await expect(orvelt.subscribers.count({ projectId }, { throwOnError: true })).rejects.toBe(
       error,
     );
   });
@@ -173,11 +170,11 @@ describe('generated REST transport', () => {
   it('passes cancellation signals to the transport', async () => {
     const controller = new AbortController();
     controller.abort();
-    const client = responseClient((request) => {
+    const orvelt = responseClient((request) => {
       request.signal.throwIfAborted();
       return Response.json({ total: 0, delta: 0 });
     });
-    const result = await subscribers.count({ projectId }, { client, signal: controller.signal });
+    const result = await orvelt.subscribers.count({ projectId }, { signal: controller.signal });
     expect(result.error).toBe(controller.signal.reason);
     expect(result.response).toBeUndefined();
   });

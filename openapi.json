@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "Orvelt Business SDK",
-    "version": "0.1.8",
+    "version": "0.1.10",
     "description": "Curated SDK subset of the Business REST API. Every operation requires an organization-wide API key in the x-api-key header."
   },
   "servers": [
@@ -422,6 +422,75 @@
             "$ref": "#/components/schemas/UnexpectedHttpError"
           }
         ]
+      },
+      "PurchaseInput": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StripePurchaseInput"
+          }
+        ],
+        "description": "The connected integration and customer a purchase link is reserved for, keyed by `provider`.",
+        "discriminator": {
+          "propertyName": "provider",
+          "mapping": {
+            "stripe": "#/components/schemas/StripePurchaseInput"
+          }
+        }
+      },
+      "StripePurchaseInput": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "stripe"
+          },
+          "customerId": {
+            "type": "string",
+            "pattern": "^cus_[A-Za-z0-9]{1,255}$",
+            "description": "The customer's ID in the project's connected Stripe account (`cus_…`)."
+          }
+        },
+        "required": [
+          "provider",
+          "customerId"
+        ],
+        "additionalProperties": false,
+        "description": "Reserve the link for a Stripe customer. It works once that customer's payment succeeds in the project's connected Stripe account."
+      },
+      "Purchase": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StripePurchase"
+          }
+        ],
+        "description": "The integration that confirms a purchase link, keyed by `provider`.",
+        "discriminator": {
+          "propertyName": "provider",
+          "mapping": {
+            "stripe": "#/components/schemas/StripePurchase"
+          }
+        }
+      },
+      "StripePurchase": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "stripe"
+          },
+          "customerId": {
+            "description": "The Stripe customer (`cus_…`), or null when the payment had none.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "provider",
+          "customerId"
+        ],
+        "description": "A purchase confirmed by Stripe."
       },
       "__schema0": {
         "anyOf": [
@@ -2034,7 +2103,7 @@
       "post": {
         "operationId": "link.create",
         "summary": "Create a delivery link",
-        "description": "Create a pre-verified opinion link for one customer and optionally email it. Each project can email the same customer once every 48 hours.",
+        "description": "Create a delivery link for one customer: an invite they can use at once, or with `purchase`, a link reserved for a customer of a connected integration until they pay. Optionally notify them. Each project can notify the same customer once every 48 hours.",
         "tags": [
           "Project Delivery"
         ],
@@ -2057,35 +2126,43 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "customerEmail": {
+                  "email": {
                     "type": "string",
                     "format": "email",
-                    "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                    "description": "The customer's email address."
                   },
-                  "customerFirstName": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "The customer's first name."
+                  },
+                  "lastName": {
+                    "description": "The customer's last name.",
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 100
                   },
-                  "customerLastName": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "customerReference": {
+                  "reference": {
+                    "description": "Your order reference. Required for an invite; a purchase link takes it from the payment, so leave it out.",
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255
                   },
-                  "sendEmail": {
+                  "purchase": {
+                    "description": "Reserve the link for a customer of a connected integration. It works once their payment succeeds, then for 90 days. Without it the link is an invite the customer can use at once, for 7 days.",
+                    "$ref": "#/components/schemas/PurchaseInput"
+                  },
+                  "notify": {
                     "default": true,
+                    "description": "Whether Orvelt notifies the customer of the link: now for an invite, when the payment succeeds for a purchase link. Pass `false` for a silent link the customer still holds through their email address.",
                     "type": "boolean"
                   }
                 },
                 "required": [
-                  "customerEmail",
-                  "customerFirstName",
-                  "customerReference"
+                  "email",
+                  "firstName"
                 ]
               }
             }
@@ -2099,9 +2176,31 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
                     "verificationId": {
                       "type": "string",
-                      "pattern": "^[A-Za-z0-9_-]{21}$"
+                      "pattern": "^[0-9A-HJKMNP-TV-Z]{16}$"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "invite",
+                        "purchase"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_payment",
+                        "issued",
+                        "clicked",
+                        "submitted",
+                        "expired"
+                      ]
                     },
                     "token": {
                       "type": "string",
@@ -2119,39 +2218,53 @@
                       "maximum": 9007199254740991
                     },
                     "validityMinutes": {
-                      "type": "number",
-                      "const": 10080
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
                     },
                     "projectId": {
                       "type": "string",
                       "format": "uuid",
                       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "customerEmail": {
+                    "email": {
                       "type": "string",
                       "format": "email",
                       "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                     },
-                    "customerFirstName": {
+                    "firstName": {
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 100
                     },
-                    "customerLastName": {
+                    "lastName": {
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 100
                     },
-                    "customerReference": {
+                    "reference": {
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 255
+                    },
+                    "purchase": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/Purchase"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "link": {
                       "type": "string",
                       "format": "uri"
                     },
-                    "emailedAt": {
+                    "notify": {
+                      "type": "boolean"
+                    },
+                    "notifiedAt": {
                       "anyOf": [
                         {
                           "type": "string",
@@ -2163,7 +2276,7 @@
                         }
                       ]
                     },
-                    "emailError": {
+                    "notifyError": {
                       "default": null,
                       "type": [
                         "string",
@@ -2172,16 +2285,21 @@
                     }
                   },
                   "required": [
+                    "id",
                     "verificationId",
+                    "type",
+                    "status",
                     "token",
                     "expiresAt",
                     "ttlSeconds",
                     "validityMinutes",
                     "projectId",
-                    "customerEmail",
-                    "customerFirstName",
+                    "email",
+                    "firstName",
+                    "purchase",
                     "link",
-                    "emailedAt"
+                    "notify",
+                    "notifiedAt"
                   ]
                 }
               }
@@ -2343,10 +2461,26 @@
               "type": "string",
               "enum": [
                 "all",
+                "awaiting_payment",
                 "issued",
                 "clicked",
                 "submitted",
                 "expired"
+              ]
+            },
+            "allowEmptyValue": true,
+            "allowReserved": false
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "invite",
+                "purchase"
               ]
             },
             "allowEmptyValue": true,
@@ -2368,37 +2502,57 @@
                         "properties": {
                           "verificationId": {
                             "type": "string",
-                            "pattern": "^[A-Za-z0-9_-]{21}$"
+                            "pattern": "^[0-9A-HJKMNP-TV-Z]{16}$"
                           },
                           "id": {
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                           },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "invite",
+                              "purchase"
+                            ]
+                          },
                           "projectId": {
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                           },
-                          "customerEmail": {
+                          "email": {
                             "type": "string",
                             "format": "email",
                             "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                           },
-                          "customerFirstName": {
+                          "firstName": {
                             "type": "string"
                           },
-                          "customerLastName": {
+                          "lastName": {
                             "type": [
                               "string",
                               "null"
                             ]
                           },
-                          "customerReference": {
+                          "reference": {
                             "type": [
                               "string",
                               "null"
                             ]
+                          },
+                          "purchase": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/components/schemas/Purchase"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "notify": {
+                            "type": "boolean"
                           },
                           "issuedAt": {
                             "type": "string",
@@ -2414,7 +2568,7 @@
                             "type": "string",
                             "format": "uri"
                           },
-                          "emailedAt": {
+                          "notifiedAt": {
                             "anyOf": [
                               {
                                 "type": "string",
@@ -2426,7 +2580,7 @@
                               }
                             ]
                           },
-                          "nextEmailAt": {
+                          "nextNotifyAt": {
                             "anyOf": [
                               {
                                 "type": "string",
@@ -2477,6 +2631,7 @@
                           "status": {
                             "type": "string",
                             "enum": [
+                              "awaiting_payment",
                               "issued",
                               "clicked",
                               "submitted",
@@ -2487,16 +2642,19 @@
                         "required": [
                           "verificationId",
                           "id",
+                          "type",
                           "projectId",
-                          "customerEmail",
-                          "customerFirstName",
-                          "customerLastName",
-                          "customerReference",
+                          "email",
+                          "firstName",
+                          "lastName",
+                          "reference",
+                          "purchase",
+                          "notify",
                           "issuedAt",
                           "expiresAt",
                           "link",
-                          "emailedAt",
-                          "nextEmailAt",
+                          "notifiedAt",
+                          "nextNotifyAt",
                           "clickedAt",
                           "submittedAt",
                           "responseId",
@@ -2668,7 +2826,7 @@
       "post": {
         "operationId": "link.resend",
         "summary": "Resend a delivery link",
-        "description": "Email an existing, unexpired delivery link to its customer again. The 48-hour email cooldown applies.",
+        "description": "Notify the customer of an existing, unexpired delivery link again. The 48-hour notification cooldown applies.",
         "tags": [
           "Project Delivery"
         ],
@@ -2702,20 +2860,20 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "emailedAt": {
+                    "notifiedAt": {
                       "type": "string",
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
-                    "nextEmailAt": {
+                    "nextNotifyAt": {
                       "type": "string",
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     }
                   },
                   "required": [
-                    "emailedAt",
-                    "nextEmailAt"
+                    "notifiedAt",
+                    "nextNotifyAt"
                   ]
                 }
               }
@@ -3256,7 +3414,8 @@
                                   "visual_evidence",
                                   "delivery_link",
                                   "qr_permanent",
-                                  "qr_rotating"
+                                  "qr_rotating",
+                                  "stripe_purchase"
                                 ]
                               },
                               {

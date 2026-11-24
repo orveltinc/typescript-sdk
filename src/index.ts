@@ -1,7 +1,7 @@
-export { client as businessClient } from './generated/client.gen.js';
-export * from './api.js';
-export * from './config.js';
+export { Orvelt } from './orvelt.js';
+export type { OrveltOptions } from './config.js';
 export { attachOpinionEmbed, createOpinionEmbed, opinionEmbedUrl, orveltEmbed } from './browser.js';
 export type { OpinionEmbedConfiguration } from './browser.js';
 export * from './constants.js';
-export * from './generated/index.js';
+export type * from './generated/types.gen.js';
+export type { Options } from './generated/sdk.gen.js';

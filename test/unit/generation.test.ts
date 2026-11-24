@@ -7,33 +7,25 @@ import {
   fixGeneratedClientHeaders,
   fixGeneratedHeaders,
 } from '../../scripts/fix-generated-headers.ts';
-import * as generated from '../../src/generated/index.ts';
-import * as api from '../../src/api.ts';
+import { Orvelt } from '../../src/index.ts';
 import spec from '../../openapi.json';
 
 const methods = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
-const exportedOperations: Record<string, unknown> = generated;
 
 describe('SDK generation invariants', () => {
-  it('exposes every spec operation exactly once in the generated SDK and facade', () => {
+  it('exposes every spec operation on the Orvelt client at its operation ID', () => {
     const operations = Object.values(spec.paths).flatMap((item) =>
       Object.entries(item)
         .filter(([method]) => methods.has(method))
-        .map(([, operation]) => operation.operationId),
+        .map(([, operation]) => operation.operationId as string),
     );
-    const names = operations.map((id) =>
-      id.replace(/\.([a-z])/g, (_match: string, letter: string) => letter.toUpperCase()),
-    );
-    expect(Object.keys(generated).toSorted()).toEqual(names.toSorted());
+    const orvelt = new Orvelt('ov_test_key');
     for (const id of operations) {
       // Nested groups such as questions.versions.create resolve segment by segment.
-      const resolved = (id as string)
+      const resolved = id
         .split('.')
-        .reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], api.project);
-      const name = id.replace(/\.([a-z])/g, (_match: string, letter: string) =>
-        letter.toUpperCase(),
-      );
-      expect(resolved).toBe(exportedOperations[name]);
+        .reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], orvelt);
+      expect(resolved, id).toEqual(expect.any(Function));
     }
   });
 

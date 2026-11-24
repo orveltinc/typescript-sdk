@@ -118,19 +118,47 @@ describe.skipIf(!hasMonorepoContracts)('public Business OpenAPI document', () =>
     }
   });
 
-  it('uses one link creation operation with email enabled by default', async () => {
+  it('uses one link creation operation that makes an invite unless given a purchase', async () => {
     const document = await generateBusinessOpenApiDocument();
     expect(document.paths?.['/project/{projectId}/link/email']).toBeUndefined();
-    expect(document.paths?.['/project/{projectId}/link']?.post).toMatchObject({
-      operationId: 'link.create',
-      requestBody: {
-        content: {
-          'application/json': {
-            schema: { properties: { sendEmail: { type: 'boolean', default: true } } },
-          },
-        },
-      },
+    const operation = document.paths?.['/project/{projectId}/link']?.post;
+    expect(operation).toBeDefined();
+    const schema = (
+      operation as {
+        requestBody: { content: { 'application/json': { schema: { properties: object } } } };
+      }
+    ).requestBody.content['application/json'].schema;
+    expect(schema.properties).toMatchObject({
+      purchase: { $ref: '#/components/schemas/PurchaseInput' },
+      // Its default depends on the kind of link, so the server decides it.
+      notify: { type: 'boolean' },
     });
+    expect(schema.properties).not.toHaveProperty('type');
+  });
+
+  // Risk: Hey API only generates a narrowed union per provider from a `oneOf` whose discriminator
+  // mapping points at real components. A renamed or unnamed variant would silently degrade the
+  // SDK's purchase types, or leave a mapping that points nowhere.
+  it('describes purchases as named unions keyed by provider', async () => {
+    const document = await generateBusinessOpenApiDocument();
+    const schemas = (document.components?.schemas ?? {}) as Record<
+      string,
+      {
+        oneOf?: Array<{ $ref: string }>;
+        discriminator?: { propertyName: string; mapping: Record<string, string> };
+      }
+    >;
+    for (const name of ['PurchaseInput', 'Purchase']) {
+      const union = schemas[name];
+      expect(union?.discriminator?.propertyName).toBe('provider');
+      const variants = union?.oneOf?.map(({ $ref }) => $ref) ?? [];
+      expect(Object.values(union?.discriminator?.mapping ?? {}).toSorted()).toEqual(
+        variants.toSorted(),
+      );
+      for (const ref of variants) {
+        expect(schemas[ref.replace('#/components/schemas/', '')]).toBeDefined();
+      }
+    }
   });
 
   it('keeps collections resource-owned and session-only CSV exports out of the SDK', async () => {

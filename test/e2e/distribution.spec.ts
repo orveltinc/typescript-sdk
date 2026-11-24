@@ -231,7 +231,7 @@ test('the packed npm entries import in Node without a DOM or workspace dependenc
     import * as sdk from '@orvelt/business';
     import * as browser from '@orvelt/business/browser';
     assert.equal(typeof document, 'undefined');
-    assert.equal(typeof sdk.businessClient, 'object');
+    assert.equal(typeof sdk.Orvelt, 'function');
     for (const entry of [sdk, browser]) {
       const embed = entry.orveltEmbed.configure({ projectId: '${projectId}' });
       for (const method of ['mount', 'open', 'close', 'start', 'unmount'])

@@ -133,6 +133,32 @@ export const zServiceUnavailableError = z.object({
 
 export const zHttp503Error = z.union([zServiceUnavailableError, zUnexpectedHttpError]);
 
+/**
+ * Reserve the link for a Stripe customer. It works once that customer's payment succeeds in the project's connected Stripe account.
+ */
+export const zStripePurchaseInput = z.object({
+  provider: z.literal('stripe'),
+  customerId: z.string().regex(/^cus_[A-Za-z0-9]{1,255}$/),
+});
+
+/**
+ * The connected integration and customer a purchase link is reserved for, keyed by `provider`.
+ */
+export const zPurchaseInput = zStripePurchaseInput;
+
+/**
+ * A purchase confirmed by Stripe.
+ */
+export const zStripePurchase = z.object({
+  provider: z.literal('stripe'),
+  customerId: z.string().nullable(),
+});
+
+/**
+ * The integration that confirms a purchase link, keyed by `provider`.
+ */
+export const zPurchase = zStripePurchase;
+
 export const zSchema0 = z
   .union([
     z.string(),
@@ -583,7 +609,11 @@ export const zLinkListQuery = z.object({
   limit: z.int().gte(1).lte(100).optional().default(10),
   sort: z.enum(['newest', 'oldest']).optional().default('newest'),
   query: z.string().max(200).optional().default(''),
-  status: z.enum(['all', 'issued', 'clicked', 'submitted', 'expired']).optional().default('all'),
+  status: z
+    .enum(['all', 'awaiting_payment', 'issued', 'clicked', 'submitted', 'expired'])
+    .optional()
+    .default('all'),
+  type: z.enum(['all', 'invite', 'purchase']).optional().default('all'),
 });
 
 /**
@@ -592,25 +622,28 @@ export const zLinkListQuery = z.object({
 export const zLinkListResponse = z.object({
   links: z.array(
     z.object({
-      verificationId: z.string().regex(/^[A-Za-z0-9_-]{21}$/),
+      verificationId: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{16}$/),
       id: z
         .uuid()
         .regex(
           /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
         ),
+      type: z.enum(['invite', 'purchase']),
       projectId: z
         .uuid()
         .regex(
           /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
         ),
-      customerEmail: z
+      email: z
         .email()
         .regex(
           /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
-      customerFirstName: z.string(),
-      customerLastName: z.string().nullable(),
-      customerReference: z.string().nullable(),
+      firstName: z.string(),
+      lastName: z.string().nullable(),
+      reference: z.string().nullable(),
+      purchase: zPurchase.nullable(),
+      notify: z.boolean(),
       issuedAt: z.iso
         .datetime()
         .regex(
@@ -622,13 +655,13 @@ export const zLinkListResponse = z.object({
           /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
         ),
       link: z.url(),
-      emailedAt: z.iso
+      notifiedAt: z.iso
         .datetime()
         .regex(
           /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
         )
         .nullable(),
-      nextEmailAt: z.iso
+      nextNotifyAt: z.iso
         .datetime()
         .regex(
           /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
@@ -652,7 +685,7 @@ export const zLinkListResponse = z.object({
           /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
         )
         .nullable(),
-      status: z.enum(['issued', 'clicked', 'submitted', 'expired']),
+      status: z.enum(['awaiting_payment', 'issued', 'clicked', 'submitted', 'expired']),
     }),
   ),
   pagination: z.object({
@@ -678,15 +711,16 @@ export const zLinkListResponse = z.object({
 });
 
 export const zLinkCreateBody = z.object({
-  customerEmail: z
+  email: z
     .email()
     .regex(
       /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
     ),
-  customerFirstName: z.string().min(1).max(100),
-  customerLastName: z.string().min(1).max(100).optional(),
-  customerReference: z.string().min(1).max(255),
-  sendEmail: z.boolean().optional().default(true),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100).optional(),
+  reference: z.string().min(1).max(255).optional(),
+  purchase: zPurchaseInput.optional(),
+  notify: z.boolean().optional().default(true),
 });
 
 export const zLinkCreatePath = z.object({
@@ -701,7 +735,14 @@ export const zLinkCreatePath = z.object({
  * OK
  */
 export const zLinkCreateResponse = z.object({
-  verificationId: z.string().regex(/^[A-Za-z0-9_-]{21}$/),
+  id: z
+    .uuid()
+    .regex(
+      /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
+    ),
+  verificationId: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{16}$/),
+  type: z.enum(['invite', 'purchase']),
+  status: z.enum(['awaiting_payment', 'issued', 'clicked', 'submitted', 'expired']),
   token: z
     .uuid()
     .regex(
@@ -713,28 +754,30 @@ export const zLinkCreateResponse = z.object({
       /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
     ),
   ttlSeconds: z.int().gt(0).lte(9007199254740991),
-  validityMinutes: z.literal(10080),
+  validityMinutes: z.int().gt(0).lte(9007199254740991),
   projectId: z
     .uuid()
     .regex(
       /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/,
     ),
-  customerEmail: z
+  email: z
     .email()
     .regex(
       /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
     ),
-  customerFirstName: z.string().min(1).max(100),
-  customerLastName: z.string().min(1).max(100).optional(),
-  customerReference: z.string().min(1).max(255).optional(),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100).optional(),
+  reference: z.string().min(1).max(255).optional(),
+  purchase: zPurchase.nullable(),
   link: z.url(),
-  emailedAt: z.iso
+  notify: z.boolean(),
+  notifiedAt: z.iso
     .datetime()
     .regex(
       /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
     )
     .nullable(),
-  emailError: z.string().nullish().default(null),
+  notifyError: z.string().nullish().default(null),
 });
 
 export const zLinkResendPath = z.object({
@@ -754,12 +797,12 @@ export const zLinkResendPath = z.object({
  * OK
  */
 export const zLinkResendResponse = z.object({
-  emailedAt: z.iso
+  notifiedAt: z.iso
     .datetime()
     .regex(
       /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
     ),
-  nextEmailAt: z.iso
+  nextNotifyAt: z.iso
     .datetime()
     .regex(
       /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$/,
@@ -890,7 +933,14 @@ export const zOpinionsListResponse = z.object({
         )
         .nullable(),
       verificationType: z
-        .enum(['auto', 'visual_evidence', 'delivery_link', 'qr_permanent', 'qr_rotating'])
+        .enum([
+          'auto',
+          'visual_evidence',
+          'delivery_link',
+          'qr_permanent',
+          'qr_rotating',
+          'stripe_purchase',
+        ])
         .nullish(),
       verifiedAt: z.iso
         .datetime()

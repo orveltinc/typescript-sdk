@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { answers, opinions, qr, useProject } from '../../src/index.ts';
-import { createBusinessClient } from '../../src/config.ts';
+import { Orvelt } from '../../src/index.ts';
 
 const projectId = '01920000-0000-7000-8000-000000000001';
 const reviewId = '01920000-0000-7000-8000-000000000002';
@@ -10,7 +9,7 @@ describe('feed filter request serialization', () => {
   for (const resource of ['answers', 'opinions'] as const) {
     it(`passes every ${resource} filter as an encoded REST query parameter`, async () => {
       let captured: Request | undefined;
-      const client = createBusinessClient({
+      const orvelt = new Orvelt({
         apiKey: 'ov_test_key',
         fetch: (async (input: URL | RequestInfo, init?: RequestInit) => {
           captured = new Request(input, init);
@@ -32,19 +31,18 @@ describe('feed filter request serialization', () => {
       };
       const result =
         resource === 'answers'
-          ? await answers.list(
-              { ...common, questionId, responseVisibility: 'private', sort: 'oldest' },
-              { client },
-            )
-          : await opinions.list(
-              {
-                ...common,
-                visibility: 'private',
-                replyStatus: 'unreplied',
-                sort: 'most-upvoted',
-              },
-              { client },
-            );
+          ? await orvelt.answers.list({
+              ...common,
+              questionId,
+              responseVisibility: 'private',
+              sort: 'oldest',
+            })
+          : await orvelt.opinions.list({
+              ...common,
+              visibility: 'private',
+              replyStatus: 'unreplied',
+              sort: 'most-upvoted',
+            });
       expect(result.error).toBeUndefined();
       expect(captured?.method).toBe('GET');
       expect(captured?.headers.get('x-api-key')).toBe('ov_test_key');
@@ -64,19 +62,19 @@ describe('feed filter request serialization', () => {
     });
   }
 
-  it('uses the simple resend endpoint with a scoped project', async () => {
+  it('uses the simple resend endpoint', async () => {
     let captured: Request | undefined;
-    const client = createBusinessClient({
+    const orvelt = new Orvelt({
       apiKey: 'ov_test_key',
       fetch: (async (input: URL | RequestInfo, init?: RequestInit) => {
         captured = new Request(input, init);
         return Response.json({
-          emailedAt: '2026-10-15T00:00:00.000Z',
-          nextEmailAt: '2026-10-17T00:00:00.000Z',
+          notifiedAt: '2026-10-15T00:00:00.000Z',
+          nextNotifyAt: '2026-10-17T00:00:00.000Z',
         });
       }) as typeof fetch,
     });
-    const result = await useProject(projectId).link.resend({ id: reviewId }, { client });
+    const result = await orvelt.link.resend({ projectId, id: reviewId });
     expect(result.error).toBeUndefined();
     expect(captured?.method).toBe('POST');
     if (!captured) throw new Error('SDK did not issue a request.');
@@ -85,14 +83,14 @@ describe('feed filter request serialization', () => {
 
   it('counts subscribers with no list endpoint', async () => {
     let captured: Request | undefined;
-    const client = createBusinessClient({
+    const orvelt = new Orvelt({
       apiKey: 'ov_test_key',
       fetch: (async (input: URL | RequestInfo, init?: RequestInit) => {
         captured = new Request(input, init);
         return Response.json({ total: 4, delta: 2 });
       }) as typeof fetch,
     });
-    const result = await useProject(projectId).subscribers.count({ client });
+    const result = await orvelt.subscribers.count({ projectId });
     expect(result.data).toEqual({ total: 4, delta: 2 });
     if (!captured) throw new Error('SDK did not issue a request.');
     expect(new URL(captured.url).pathname).toBe(`/v1/project/${projectId}/subscribers/count`);
@@ -101,7 +99,7 @@ describe('feed filter request serialization', () => {
   it('displays a rotating QR code through the simple display endpoint', async () => {
     let captured: Request | undefined;
     const now = '2026-10-15T00:00:00.000Z';
-    const client = createBusinessClient({
+    const orvelt = new Orvelt({
       apiKey: 'ov_test_key',
       fetch: (async (input: URL | RequestInfo, init?: RequestInit) => {
         captured = new Request(input, init);
@@ -123,7 +121,7 @@ describe('feed filter request serialization', () => {
         });
       }) as typeof fetch,
     });
-    const result = await qr.display({ projectId }, { client });
+    const result = await orvelt.qr.display({ projectId });
     expect(result.error).toBeUndefined();
     expect(result.data?.qrCode.mode).toBe('rotating');
     expect(captured?.method).toBe('POST');

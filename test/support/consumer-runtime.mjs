@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { orvelt, subscribers } from '@orvelt/business';
+import { Orvelt } from '@orvelt/business';
 
 const projectId = '123e4567-e89b-42d3-a456-426614174000';
 let mode = 'success';
@@ -33,19 +33,22 @@ await once(server, 'listening');
 try {
   const address = server.address();
   assert.ok(address && typeof address === 'object');
-  orvelt({ apiKey: 'consumer-test-key', baseUrl: `http://127.0.0.1:${address.port}` });
+  const orvelt = new Orvelt({
+    apiKey: 'consumer-test-key',
+    baseUrl: `http://127.0.0.1:${address.port}`,
+  });
 
-  const success = await subscribers.count({ projectId });
+  const success = await orvelt.subscribers.count({ projectId });
   assert.equal(success.error, undefined);
   assert.deepEqual(success.data, { total: 12, delta: 3 });
 
   mode = 'error';
-  const failed = await subscribers.count({ projectId });
+  const failed = await orvelt.subscribers.count({ projectId });
   assert.equal(failed.data, undefined);
   assert.equal(failed.error.code, 'UNAUTHORIZED');
   assert.equal(failed.response.status, 401);
   await assert.rejects(
-    subscribers.count({ projectId }, { throwOnError: true }),
+    orvelt.subscribers.count({ projectId }, { throwOnError: true }),
     (error) => error?.code === 'UNAUTHORIZED' && error?.status === 401,
   );
 } finally {
