@@ -20,6 +20,7 @@ import type {
   LinkResendResponses,
   OpinionsListErrors,
   OpinionsListResponses,
+  PurchaseInput,
   QrDisplayErrors,
   QrDisplayResponses,
   QuestionsCreateErrors,
@@ -71,581 +72,689 @@ export type Options<
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-/**
- * List questions
- *
- * List a project's guided questions.
- */
-export const questionsList = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<QuestionsListResponses, QuestionsListErrors, ThrowOnError> => {
-  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
-  return (options?.client ?? client).get<QuestionsListResponses, QuestionsListErrors, ThrowOnError>(
-    {
+class HeyApiClient {
+  protected client: Client;
+
+  constructor(args?: { client?: Client }) {
+    this.client = args?.client ?? client;
+  }
+}
+
+class HeyApiRegistry<T> {
+  private readonly defaultKey = 'default';
+
+  private readonly instances: Map<string, T> = new Map();
+
+  get(key?: string): T {
+    const instance = this.instances.get(key ?? this.defaultKey);
+    if (!instance) {
+      throw new Error(`No SDK client found. Create one with "new OrveltSdk()" to fix this error.`);
+    }
+    return instance;
+  }
+
+  set(value: T, key?: string): void {
+    this.instances.set(key ?? this.defaultKey, value);
+  }
+}
+
+export class Versions extends HeyApiClient {
+  /**
+   * Create a question version
+   *
+   * Save new wording without changing the original question version.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      questionId: string;
+      tags?: Array<
+        | 'Trust'
+        | 'Reliability'
+        | 'Experience'
+        | 'Safety'
+        | 'Personalization'
+        | 'Fairness'
+        | 'Identity'
+        | 'Outcome'
+      >;
+      isAutoTags?: boolean;
+      priority?: number;
+      isAutoPriority?: boolean;
+      status?: 'active' | 'archived';
+      question: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<QuestionsVersionsCreateResponses, QuestionsVersionsCreateErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'path', key: 'questionId' },
+            { in: 'body', key: 'tags' },
+            { in: 'body', key: 'isAutoTags' },
+            { in: 'body', key: 'priority' },
+            { in: 'body', key: 'isAutoPriority' },
+            { in: 'body', key: 'status' },
+            { in: 'body', key: 'question' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).post<
+      QuestionsVersionsCreateResponses,
+      QuestionsVersionsCreateErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zQuestionsVersionsCreateResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/questions/{questionId}/versions',
+      ...options,
+      ...params,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+          ? Object.fromEntries(new Headers(options.headers))
+          : options?.headers),
+        ...params.headers,
+      },
+    });
+  }
+}
+
+export class Questions extends HeyApiClient {
+  /**
+   * List questions
+   *
+   * List a project's guided questions.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<QuestionsListResponses, QuestionsListErrors, ThrowOnError> {
+    const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
+    return (options?.client ?? this.client).get<
+      QuestionsListResponses,
+      QuestionsListErrors,
+      ThrowOnError
+    >({
       responseValidator: async (data) => await zQuestionsListResponse.parseAsync(data),
       security: [{ name: 'x-api-key', type: 'apiKey' }],
       url: '/project/{projectId}/questions',
       ...options,
       ...params,
+    });
+  }
+
+  /**
+   * Create a question
+   *
+   * Add a guided question to a project.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      tags?: Array<
+        | 'Trust'
+        | 'Reliability'
+        | 'Experience'
+        | 'Safety'
+        | 'Personalization'
+        | 'Fairness'
+        | 'Identity'
+        | 'Outcome'
+      >;
+      isAutoTags?: boolean;
+      priority?: number;
+      isAutoPriority?: boolean;
+      question: string;
+      answerMode: 'text_only' | 'single_select' | 'multi_select';
+      answers?: {
+        options?: Array<{
+          id: string;
+          option: string;
+          description?: string;
+        }>;
+        allowOther?: boolean;
+        skippable?: boolean;
+        layout?: 'inline' | 'stacked';
+        chipPosition?: 'left' | 'right';
+        otherPlaceholder?: string;
+        freeTextPlaceholder?: string;
+        freeTextMultiline?: boolean;
+      };
+      status: 'active' | 'archived';
+      responseVisibility: 'default' | 'private';
     },
-  );
-};
-
-/**
- * Create a question
- *
- * Add a guided question to a project.
- */
-export const questionsCreate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    tags?: Array<
-      | 'Trust'
-      | 'Reliability'
-      | 'Experience'
-      | 'Safety'
-      | 'Personalization'
-      | 'Fairness'
-      | 'Identity'
-      | 'Outcome'
-    >;
-    isAutoTags?: boolean;
-    priority?: number;
-    isAutoPriority?: boolean;
-    question: string;
-    answerMode: 'text_only' | 'single_select' | 'multi_select';
-    answers?: {
-      options?: Array<{
-        id: string;
-        option: string;
-        description?: string;
-      }>;
-      allowOther?: boolean;
-      skippable?: boolean;
-      layout?: 'inline' | 'stacked';
-      chipPosition?: 'left' | 'right';
-      otherPlaceholder?: string;
-      freeTextPlaceholder?: string;
-      freeTextMultiline?: boolean;
-    };
-    status: 'active' | 'archived';
-    responseVisibility: 'default' | 'private';
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<QuestionsCreateResponses, QuestionsCreateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'body', key: 'tags' },
-          { in: 'body', key: 'isAutoTags' },
-          { in: 'body', key: 'priority' },
-          { in: 'body', key: 'isAutoPriority' },
-          { in: 'body', key: 'question' },
-          { in: 'body', key: 'answerMode' },
-          { in: 'body', key: 'answers' },
-          { in: 'body', key: 'status' },
-          { in: 'body', key: 'responseVisibility' },
-        ],
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<QuestionsCreateResponses, QuestionsCreateErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'body', key: 'tags' },
+            { in: 'body', key: 'isAutoTags' },
+            { in: 'body', key: 'priority' },
+            { in: 'body', key: 'isAutoPriority' },
+            { in: 'body', key: 'question' },
+            { in: 'body', key: 'answerMode' },
+            { in: 'body', key: 'answers' },
+            { in: 'body', key: 'status' },
+            { in: 'body', key: 'responseVisibility' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).post<
+      QuestionsCreateResponses,
+      QuestionsCreateErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zQuestionsCreateResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/questions',
+      ...options,
+      ...params,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+          ? Object.fromEntries(new Headers(options.headers))
+          : options?.headers),
+        ...params.headers,
       },
-    ],
-  );
-  return (options?.client ?? client).post<
-    QuestionsCreateResponses,
-    QuestionsCreateErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zQuestionsCreateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/questions',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
-        ? Object.fromEntries(new Headers(options.headers))
-        : options?.headers),
-      ...params.headers,
+    });
+  }
+
+  /**
+   * Delete a question
+   *
+   * Remove a question from a project.
+   */
+  public delete<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      questionId: string;
     },
-  });
-};
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<QuestionsDeleteResponses, QuestionsDeleteErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'path', key: 'questionId' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).delete<
+      QuestionsDeleteResponses,
+      QuestionsDeleteErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zQuestionsDeleteResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/questions/{questionId}',
+      ...options,
+      ...params,
+    });
+  }
 
-/**
- * Delete a question
- *
- * Remove a question from a project.
- */
-export const questionsDelete = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    questionId: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<QuestionsDeleteResponses, QuestionsDeleteErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'questionId' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).delete<
-    QuestionsDeleteResponses,
-    QuestionsDeleteErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zQuestionsDeleteResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/questions/{questionId}',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * Update a question
- *
- * Change settings, activate, or archive a question version.
- */
-export const questionsUpdate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    questionId: string;
-    tags?: Array<
-      | 'Trust'
-      | 'Reliability'
-      | 'Experience'
-      | 'Safety'
-      | 'Personalization'
-      | 'Fairness'
-      | 'Identity'
-      | 'Outcome'
-    >;
-    isAutoTags?: boolean;
-    priority?: number;
-    isAutoPriority?: boolean;
-    status?: 'active' | 'archived';
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<QuestionsUpdateResponses, QuestionsUpdateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'questionId' },
-          { in: 'body', key: 'tags' },
-          { in: 'body', key: 'isAutoTags' },
-          { in: 'body', key: 'priority' },
-          { in: 'body', key: 'isAutoPriority' },
-          { in: 'body', key: 'status' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).patch<
-    QuestionsUpdateResponses,
-    QuestionsUpdateErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zQuestionsUpdateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/questions/{questionId}',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
-        ? Object.fromEntries(new Headers(options.headers))
-        : options?.headers),
-      ...params.headers,
+  /**
+   * Update a question
+   *
+   * Change settings, activate, or archive a question version.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      questionId: string;
+      tags?: Array<
+        | 'Trust'
+        | 'Reliability'
+        | 'Experience'
+        | 'Safety'
+        | 'Personalization'
+        | 'Fairness'
+        | 'Identity'
+        | 'Outcome'
+      >;
+      isAutoTags?: boolean;
+      priority?: number;
+      isAutoPriority?: boolean;
+      status?: 'active' | 'archived';
     },
-  });
-};
-
-/**
- * Create a question version
- *
- * Save new wording without changing the original question version.
- */
-export const questionsVersionsCreate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    questionId: string;
-    tags?: Array<
-      | 'Trust'
-      | 'Reliability'
-      | 'Experience'
-      | 'Safety'
-      | 'Personalization'
-      | 'Fairness'
-      | 'Identity'
-      | 'Outcome'
-    >;
-    isAutoTags?: boolean;
-    priority?: number;
-    isAutoPriority?: boolean;
-    status?: 'active' | 'archived';
-    question: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<QuestionsVersionsCreateResponses, QuestionsVersionsCreateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'questionId' },
-          { in: 'body', key: 'tags' },
-          { in: 'body', key: 'isAutoTags' },
-          { in: 'body', key: 'priority' },
-          { in: 'body', key: 'isAutoPriority' },
-          { in: 'body', key: 'status' },
-          { in: 'body', key: 'question' },
-        ],
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<QuestionsUpdateResponses, QuestionsUpdateErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'path', key: 'questionId' },
+            { in: 'body', key: 'tags' },
+            { in: 'body', key: 'isAutoTags' },
+            { in: 'body', key: 'priority' },
+            { in: 'body', key: 'isAutoPriority' },
+            { in: 'body', key: 'status' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).patch<
+      QuestionsUpdateResponses,
+      QuestionsUpdateErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zQuestionsUpdateResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/questions/{questionId}',
+      ...options,
+      ...params,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+          ? Object.fromEntries(new Headers(options.headers))
+          : options?.headers),
+        ...params.headers,
       },
-    ],
-  );
-  return (options?.client ?? client).post<
-    QuestionsVersionsCreateResponses,
-    QuestionsVersionsCreateErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zQuestionsVersionsCreateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/questions/{questionId}/versions',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
-        ? Object.fromEntries(new Headers(options.headers))
-        : options?.headers),
-      ...params.headers,
+    });
+  }
+
+  private _versions?: Versions;
+  get versions(): Versions {
+    return (this._versions ??= new Versions({ client: this.client }));
+  }
+}
+
+export class Link extends HeyApiClient {
+  /**
+   * List delivery links
+   *
+   * List a project's delivery links and their status.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      page?: number;
+      limit?: number;
+      sort?: 'newest' | 'oldest';
+      query?: string;
+      status?: 'all' | 'awaiting_payment' | 'issued' | 'clicked' | 'submitted' | 'expired';
+      type?: 'all' | 'invite' | 'purchase';
     },
-  });
-};
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<LinkListResponses, LinkListErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'query', key: 'page' },
+            { in: 'query', key: 'limit' },
+            { in: 'query', key: 'sort' },
+            { in: 'query', key: 'query' },
+            { in: 'query', key: 'status' },
+            { in: 'query', key: 'type' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).get<LinkListResponses, LinkListErrors, ThrowOnError>({
+      responseValidator: async (data) => await zLinkListResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/link',
+      ...options,
+      ...params,
+    });
+  }
 
-/**
- * List delivery links
- *
- * List a project's delivery links and their status.
- */
-export const linkList = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    page?: number;
-    limit?: number;
-    sort?: 'newest' | 'oldest';
-    query?: string;
-    status?: 'all' | 'issued' | 'clicked' | 'submitted' | 'expired';
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<LinkListResponses, LinkListErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'query', key: 'page' },
-          { in: 'query', key: 'limit' },
-          { in: 'query', key: 'sort' },
-          { in: 'query', key: 'query' },
-          { in: 'query', key: 'status' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).get<LinkListResponses, LinkListErrors, ThrowOnError>({
-    responseValidator: async (data) => await zLinkListResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/link',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * Create a delivery link
- *
- * Create a pre-verified opinion link for one customer and optionally email it. Each project can email the same customer once every 48 hours.
- */
-export const linkCreate = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    customerEmail: string;
-    customerFirstName: string;
-    customerLastName?: string;
-    customerReference: string;
-    sendEmail?: boolean;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<LinkCreateResponses, LinkCreateErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'body', key: 'customerEmail' },
-          { in: 'body', key: 'customerFirstName' },
-          { in: 'body', key: 'customerLastName' },
-          { in: 'body', key: 'customerReference' },
-          { in: 'body', key: 'sendEmail' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).post<LinkCreateResponses, LinkCreateErrors, ThrowOnError>({
-    responseValidator: async (data) => await zLinkCreateResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/link',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
-        ? Object.fromEntries(new Headers(options.headers))
-        : options?.headers),
-      ...params.headers,
-    },
-  });
-};
-
-/**
- * Resend a delivery link
- *
- * Email an existing, unexpired delivery link to its customer again. The 48-hour email cooldown applies.
- */
-export const linkResend = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    id: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<LinkResendResponses, LinkResendErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'path', key: 'id' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).post<LinkResendResponses, LinkResendErrors, ThrowOnError>({
-    responseValidator: async (data) => await zLinkResendResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/link/{id}/resend',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * Display a rotating QR code
- *
- * Get the current link for the project's rotating QR code. Fetch it again when `validUntil` passes.
- */
-export const qrDisplay = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<QrDisplayResponses, QrDisplayErrors, ThrowOnError> => {
-  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
-  return (options?.client ?? client).post<QrDisplayResponses, QrDisplayErrors, ThrowOnError>({
-    responseValidator: async (data) => await zQrDisplayResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/qr/display',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * List opinions
- *
- * List a project's opinions with search, reply-status, and date filters.
- */
-export const opinionsList = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    page?: number;
-    limit?: number;
-    sort?: 'newest' | 'oldest' | 'most-upvoted' | 'least-upvoted';
-    query?: string;
-    dateFrom?: number;
-    dateTo?: number;
-    externalUserId?: string;
-    opinionId?: string;
-    visibility?: 'all' | 'public' | 'private';
-    replyStatus?: 'all' | 'replied' | 'unreplied';
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<OpinionsListResponses, OpinionsListErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'query', key: 'page' },
-          { in: 'query', key: 'limit' },
-          { in: 'query', key: 'sort' },
-          { in: 'query', key: 'query' },
-          { in: 'query', key: 'dateFrom' },
-          { in: 'query', key: 'dateTo' },
-          { in: 'query', key: 'externalUserId' },
-          { in: 'query', key: 'opinionId' },
-          { in: 'query', key: 'visibility' },
-          { in: 'query', key: 'replyStatus' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).get<OpinionsListResponses, OpinionsListErrors, ThrowOnError>({
-    responseValidator: async (data) => await zOpinionsListResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/opinions',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * List answers
- *
- * List customers' answers to a project's questions.
- */
-export const answersList = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    page?: number;
-    limit?: number;
-    sort?: 'newest' | 'oldest';
-    query?: string;
-    dateFrom?: number;
-    dateTo?: number;
-    externalUserId?: string;
-    responseId?: string;
-    questionId?: string;
-    familyId?: string;
-    responseVisibility?: 'all' | 'default' | 'private';
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<AnswersListResponses, AnswersListErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'query', key: 'page' },
-          { in: 'query', key: 'limit' },
-          { in: 'query', key: 'sort' },
-          { in: 'query', key: 'query' },
-          { in: 'query', key: 'dateFrom' },
-          { in: 'query', key: 'dateTo' },
-          { in: 'query', key: 'externalUserId' },
-          { in: 'query', key: 'responseId' },
-          { in: 'query', key: 'questionId' },
-          { in: 'query', key: 'familyId' },
-          { in: 'query', key: 'responseVisibility' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).get<AnswersListResponses, AnswersListErrors, ThrowOnError>({
-    responseValidator: async (data) => await zAnswersListResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/answers',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * Count subscribers
- *
- * Count a project's subscribers.
- */
-export const subscribersCount = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<SubscribersCountResponses, SubscribersCountErrors, ThrowOnError> => {
-  const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
-  return (options?.client ?? client).get<
-    SubscribersCountResponses,
-    SubscribersCountErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zSubscribersCountResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/subscribers/count',
-    ...options,
-    ...params,
-  });
-};
-
-/**
- * Invite subscribers
- *
- * Email invitations to subscribe to a project.
- */
-export const subscribersInvite = <ThrowOnError extends boolean = false>(
-  parameters: {
-    projectId: string;
-    subscribers: Array<{
-      name: string;
+  /**
+   * Create a delivery link
+   *
+   * Create a delivery link for one customer: an invite they can use at once, or with `purchase`, a link reserved for a customer of a connected integration until they pay. Optionally notify them. Each project can notify the same customer once every 48 hours.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
       email: string;
-    }>;
-  },
-  options?: Options<never, ThrowOnError>,
-): RequestResult<SubscribersInviteResponses, SubscribersInviteErrors, ThrowOnError> => {
-  const params = buildClientParams(
-    [parameters],
-    [
-      {
-        args: [
-          { in: 'path', key: 'projectId' },
-          { in: 'body', key: 'subscribers' },
-        ],
-      },
-    ],
-  );
-  return (options?.client ?? client).post<
-    SubscribersInviteResponses,
-    SubscribersInviteErrors,
-    ThrowOnError
-  >({
-    responseValidator: async (data) => await zSubscribersInviteResponse.parseAsync(data),
-    security: [{ name: 'x-api-key', type: 'apiKey' }],
-    url: '/project/{projectId}/subscribers/invite',
-    ...options,
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
-        ? Object.fromEntries(new Headers(options.headers))
-        : options?.headers),
-      ...params.headers,
+      firstName: string;
+      lastName?: string;
+      reference?: string;
+      purchase?: PurchaseInput;
+      notify?: boolean;
     },
-  });
-};
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<LinkCreateResponses, LinkCreateErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'body', key: 'email' },
+            { in: 'body', key: 'firstName' },
+            { in: 'body', key: 'lastName' },
+            { in: 'body', key: 'reference' },
+            { in: 'body', key: 'purchase' },
+            { in: 'body', key: 'notify' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).post<
+      LinkCreateResponses,
+      LinkCreateErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zLinkCreateResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/link',
+      ...options,
+      ...params,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+          ? Object.fromEntries(new Headers(options.headers))
+          : options?.headers),
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Resend a delivery link
+   *
+   * Notify the customer of an existing, unexpired delivery link again. The 48-hour notification cooldown applies.
+   */
+  public resend<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<LinkResendResponses, LinkResendErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'path', key: 'id' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).post<
+      LinkResendResponses,
+      LinkResendErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zLinkResendResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/link/{id}/resend',
+      ...options,
+      ...params,
+    });
+  }
+}
+
+export class Qr extends HeyApiClient {
+  /**
+   * Display a rotating QR code
+   *
+   * Get the current link for the project's rotating QR code. Fetch it again when `validUntil` passes.
+   */
+  public display<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<QrDisplayResponses, QrDisplayErrors, ThrowOnError> {
+    const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
+    return (options?.client ?? this.client).post<QrDisplayResponses, QrDisplayErrors, ThrowOnError>(
+      {
+        responseValidator: async (data) => await zQrDisplayResponse.parseAsync(data),
+        security: [{ name: 'x-api-key', type: 'apiKey' }],
+        url: '/project/{projectId}/qr/display',
+        ...options,
+        ...params,
+      },
+    );
+  }
+}
+
+export class Opinions extends HeyApiClient {
+  /**
+   * List opinions
+   *
+   * List a project's opinions with search, reply-status, and date filters.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      page?: number;
+      limit?: number;
+      sort?: 'newest' | 'oldest' | 'most-upvoted' | 'least-upvoted';
+      query?: string;
+      dateFrom?: number;
+      dateTo?: number;
+      externalUserId?: string;
+      opinionId?: string;
+      visibility?: 'all' | 'public' | 'private';
+      replyStatus?: 'all' | 'replied' | 'unreplied';
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<OpinionsListResponses, OpinionsListErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'query', key: 'page' },
+            { in: 'query', key: 'limit' },
+            { in: 'query', key: 'sort' },
+            { in: 'query', key: 'query' },
+            { in: 'query', key: 'dateFrom' },
+            { in: 'query', key: 'dateTo' },
+            { in: 'query', key: 'externalUserId' },
+            { in: 'query', key: 'opinionId' },
+            { in: 'query', key: 'visibility' },
+            { in: 'query', key: 'replyStatus' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).get<
+      OpinionsListResponses,
+      OpinionsListErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zOpinionsListResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/opinions',
+      ...options,
+      ...params,
+    });
+  }
+}
+
+export class Answers extends HeyApiClient {
+  /**
+   * List answers
+   *
+   * List customers' answers to a project's questions.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      page?: number;
+      limit?: number;
+      sort?: 'newest' | 'oldest';
+      query?: string;
+      dateFrom?: number;
+      dateTo?: number;
+      externalUserId?: string;
+      responseId?: string;
+      questionId?: string;
+      familyId?: string;
+      responseVisibility?: 'all' | 'default' | 'private';
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<AnswersListResponses, AnswersListErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'query', key: 'page' },
+            { in: 'query', key: 'limit' },
+            { in: 'query', key: 'sort' },
+            { in: 'query', key: 'query' },
+            { in: 'query', key: 'dateFrom' },
+            { in: 'query', key: 'dateTo' },
+            { in: 'query', key: 'externalUserId' },
+            { in: 'query', key: 'responseId' },
+            { in: 'query', key: 'questionId' },
+            { in: 'query', key: 'familyId' },
+            { in: 'query', key: 'responseVisibility' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).get<
+      AnswersListResponses,
+      AnswersListErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zAnswersListResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/answers',
+      ...options,
+      ...params,
+    });
+  }
+}
+
+export class Subscribers extends HeyApiClient {
+  /**
+   * Count subscribers
+   *
+   * Count a project's subscribers.
+   */
+  public count<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<SubscribersCountResponses, SubscribersCountErrors, ThrowOnError> {
+    const params = buildClientParams([parameters], [{ args: [{ in: 'path', key: 'projectId' }] }]);
+    return (options?.client ?? this.client).get<
+      SubscribersCountResponses,
+      SubscribersCountErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zSubscribersCountResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/subscribers/count',
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Invite subscribers
+   *
+   * Email invitations to subscribe to a project.
+   */
+  public invite<ThrowOnError extends boolean = false>(
+    parameters: {
+      projectId: string;
+      subscribers: Array<{
+        name: string;
+        email: string;
+      }>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<SubscribersInviteResponses, SubscribersInviteErrors, ThrowOnError> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: 'path', key: 'projectId' },
+            { in: 'body', key: 'subscribers' },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? this.client).post<
+      SubscribersInviteResponses,
+      SubscribersInviteErrors,
+      ThrowOnError
+    >({
+      responseValidator: async (data) => await zSubscribersInviteResponse.parseAsync(data),
+      security: [{ name: 'x-api-key', type: 'apiKey' }],
+      url: '/project/{projectId}/subscribers/invite',
+      ...options,
+      ...params,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers instanceof Headers || Array.isArray(options?.headers)
+          ? Object.fromEntries(new Headers(options.headers))
+          : options?.headers),
+        ...params.headers,
+      },
+    });
+  }
+}
+
+export class OrveltSdk extends HeyApiClient {
+  public static readonly __registry: HeyApiRegistry<OrveltSdk> = new HeyApiRegistry<OrveltSdk>();
+
+  constructor(args?: { client?: Client; key?: string }) {
+    super(args);
+    OrveltSdk.__registry.set(this, args?.key);
+  }
+
+  private _questions?: Questions;
+  get questions(): Questions {
+    return (this._questions ??= new Questions({ client: this.client }));
+  }
+
+  private _link?: Link;
+  get link(): Link {
+    return (this._link ??= new Link({ client: this.client }));
+  }
+
+  private _qr?: Qr;
+  get qr(): Qr {
+    return (this._qr ??= new Qr({ client: this.client }));
+  }
+
+  private _opinions?: Opinions;
+  get opinions(): Opinions {
+    return (this._opinions ??= new Opinions({ client: this.client }));
+  }
+
+  private _answers?: Answers;
+  get answers(): Answers {
+    return (this._answers ??= new Answers({ client: this.client }));
+  }
+
+  private _subscribers?: Subscribers;
+  get subscribers(): Subscribers {
+    return (this._subscribers ??= new Subscribers({ client: this.client }));
+  }
+}

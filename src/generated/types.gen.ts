@@ -122,6 +122,38 @@ export type ServiceUnavailableError = {
 
 export type Http503Error = ServiceUnavailableError | UnexpectedHttpError;
 
+/**
+ * The connected integration and customer a purchase link is reserved for, keyed by `provider`.
+ */
+export type PurchaseInput = StripePurchaseInput;
+
+/**
+ * Reserve the link for a Stripe customer. It works once that customer's payment succeeds in the project's connected Stripe account.
+ */
+export type StripePurchaseInput = {
+  provider: 'stripe';
+  /**
+   * The customer's ID in the project's connected Stripe account (`cus_…`).
+   */
+  customerId: string;
+};
+
+/**
+ * The integration that confirms a purchase link, keyed by `provider`.
+ */
+export type Purchase = StripePurchase;
+
+/**
+ * A purchase confirmed by Stripe.
+ */
+export type StripePurchase = {
+  provider: 'stripe';
+  /**
+   * The Stripe customer (`cus_…`), or null when the payment had none.
+   */
+  customerId: string | null;
+};
+
 export type Schema0 =
   | string
   | number
@@ -674,7 +706,8 @@ export type LinkListData = {
     limit?: number;
     sort?: 'newest' | 'oldest';
     query?: string;
-    status?: 'all' | 'issued' | 'clicked' | 'submitted' | 'expired';
+    status?: 'all' | 'awaiting_payment' | 'issued' | 'clicked' | 'submitted' | 'expired';
+    type?: 'all' | 'invite' | 'purchase';
   };
   url: '/project/{projectId}/link';
 };
@@ -720,20 +753,23 @@ export type LinkListResponses = {
     links: Array<{
       verificationId: string;
       id: string;
+      type: 'invite' | 'purchase';
       projectId: string;
-      customerEmail: string;
-      customerFirstName: string;
-      customerLastName: string | null;
-      customerReference: string | null;
+      email: string;
+      firstName: string;
+      lastName: string | null;
+      reference: string | null;
+      purchase: Purchase | null;
+      notify: boolean;
       issuedAt: string;
       expiresAt: string;
       link: string;
-      emailedAt: string | null;
-      nextEmailAt: string | null;
+      notifiedAt: string | null;
+      nextNotifyAt: string | null;
       clickedAt: string | null;
       submittedAt: string | null;
       responseId: string | null;
-      status: 'issued' | 'clicked' | 'submitted' | 'expired';
+      status: 'awaiting_payment' | 'issued' | 'clicked' | 'submitted' | 'expired';
     }>;
     pagination: {
       page: number;
@@ -752,11 +788,30 @@ export type LinkListResponse = LinkListResponses[keyof LinkListResponses];
 
 export type LinkCreateData = {
   body: {
-    customerEmail: string;
-    customerFirstName: string;
-    customerLastName?: string;
-    customerReference: string;
-    sendEmail?: boolean;
+    /**
+     * The customer's email address.
+     */
+    email: string;
+    /**
+     * The customer's first name.
+     */
+    firstName: string;
+    /**
+     * The customer's last name.
+     */
+    lastName?: string;
+    /**
+     * Your order reference. Required for an invite; a purchase link takes it from the payment, so leave it out.
+     */
+    reference?: string;
+    /**
+     * Reserve the link for a customer of a connected integration. It works once their payment succeeds, then for 90 days. Without it the link is an invite the customer can use at once, for 7 days.
+     */
+    purchase?: PurchaseInput;
+    /**
+     * Whether Orvelt notifies the customer of the link: now for an invite, when the payment succeeds for a purchase link. Pass `false` for a silent link the customer still holds through their email address.
+     */
+    notify?: boolean;
   };
   path: {
     projectId: string;
@@ -803,19 +858,24 @@ export type LinkCreateResponses = {
    * OK
    */
   200: {
+    id: string;
     verificationId: string;
+    type: 'invite' | 'purchase';
+    status: 'awaiting_payment' | 'issued' | 'clicked' | 'submitted' | 'expired';
     token: string;
     expiresAt: string;
     ttlSeconds: number;
-    validityMinutes: 10080;
+    validityMinutes: number;
     projectId: string;
-    customerEmail: string;
-    customerFirstName: string;
-    customerLastName?: string;
-    customerReference?: string;
+    email: string;
+    firstName: string;
+    lastName?: string;
+    reference?: string;
+    purchase: Purchase | null;
     link: string;
-    emailedAt: string | null;
-    emailError?: string | null;
+    notify: boolean;
+    notifiedAt: string | null;
+    notifyError?: string | null;
   };
 };
 
@@ -869,8 +929,8 @@ export type LinkResendResponses = {
    * OK
    */
   200: {
-    emailedAt: string;
-    nextEmailAt: string;
+    notifiedAt: string;
+    nextNotifyAt: string;
   };
 };
 
@@ -1017,6 +1077,7 @@ export type OpinionsListResponses = {
         | 'delivery_link'
         | 'qr_permanent'
         | 'qr_rotating'
+        | 'stripe_purchase'
         | null;
       verifiedAt?: string | null;
       verificationId?: string | null;

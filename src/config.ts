@@ -1,15 +1,12 @@
-import { createClient, mergeHeaders, type Client, type Config } from './generated/client/index.js';
-import { client } from './generated/client.gen.js';
+import { createClient, type Client, type Config } from './generated/client/index.js';
 import { DEFAULT_BUSINESS_API_BASE_URL } from './constants.js';
 
-export type BusinessClientOptions = {
+export type OrveltOptions = {
   /** An organization-wide API key created in Orvelt Business. */
   apiKey: string;
   /** Defaults to the production v1 API. Root-relative URLs are supported in browsers. */
   baseUrl?: string;
 } & Pick<Config, 'fetch' | 'headers' | 'throwOnError'>;
-
-export type BusinessClient = Client;
 
 function normalizeApiKey(apiKey: string) {
   const normalized = apiKey.trim();
@@ -35,11 +32,12 @@ function normalizeBaseUrl(baseUrl: string) {
   return (relative ? url.pathname : url.href).replace(/\/+$/, '');
 }
 
-function createBusinessClientConfig({
-  apiKey,
-  baseUrl = DEFAULT_BUSINESS_API_BASE_URL,
-  ...config
-}: BusinessClientOptions): Config {
+function createOrveltClientConfig(options: string | OrveltOptions): Config {
+  const {
+    apiKey,
+    baseUrl = DEFAULT_BUSINESS_API_BASE_URL,
+    ...config
+  }: OrveltOptions = typeof options === 'string' ? { apiKey: options } : options;
   const normalizedApiKey = normalizeApiKey(apiKey);
   // Preserve record null values: Hey API uses them to delete default headers.
   const headers =
@@ -62,26 +60,7 @@ function createBusinessClientConfig({
   };
 }
 
-/**
- * Creates an isolated client. Pass it to an SDK operation through the `client` option.
- */
-export function createBusinessClient(options: BusinessClientOptions): BusinessClient {
-  return createClient(createBusinessClientConfig(options));
+/** Creates the HTTP client an `Orvelt` instance sends its requests through. */
+export function createOrveltClient(options: string | OrveltOptions): Client {
+  return createClient(createOrveltClientConfig(options));
 }
-
-/**
- * Configures the package-level client used by every generated SDK operation.
- * Call this once during application startup. Reconfiguration replaces the supported options;
- * use isolated clients for concurrent requests with different credentials.
- */
-export function orvelt(options: BusinessClientOptions): BusinessClient {
-  const config = createBusinessClientConfig(options);
-  // Hey API merges headers on setConfig; explicitly remove the previous configuration first.
-  const headers = mergeHeaders(client.getConfig().headers);
-  client.setConfig({ headers: Object.fromEntries([...headers.keys()].map((key) => [key, null])) });
-  client.setConfig(config);
-  return client;
-}
-
-/** @deprecated Use `orvelt` instead. */
-export const configureBusinessSdk = orvelt;

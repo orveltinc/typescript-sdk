@@ -347,6 +347,11 @@ describe('frontend-only opinion embed', () => {
     runInNewContext(source, context);
     expect(context.OrveltEmbed).toBe(original);
   });
+  it('keeps the standalone script small enough for customer pages', async () => {
+    // Without a schema library the script is about 9 KB minified; a validation library or the API
+    // client leaking into the browser entry would add 100 KB or more.
+    expect((await buildOpinionEmbedScript()).length).toBeLessThan(20_000);
+  });
 });
 
 describe('presentation options', () => {
@@ -508,6 +513,7 @@ describe('modal opinion embed', () => {
       const [dialog] = dialogs();
       expect(dialog).toMatchObject({ className: 'orvelt-modal', open: true, isConnected: true });
       expect(dialog.attributes['aria-label']).toBe('Share your opinion');
+      expect(dialog.attributes.closedby).toBe('any');
       expect(dialog.style.colorScheme).toBe('dark');
       expect(frame.className).toBe('orvelt-modal__iframe');
       expect(new URL(frame.src).searchParams.get('close')).toBe('button');

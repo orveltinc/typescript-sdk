@@ -1,20 +1,13 @@
-import { afterEach, describe, expect, it } from 'bun:test';
-import { configureBusinessSdk, createBusinessClient, orvelt } from '../../src/config.ts';
+import { describe, expect, it } from 'bun:test';
+import { createOrveltClient } from '../../src/config.ts';
+import { Orvelt } from '../../src/index.ts';
 
 const apiKeySecurity = [{ in: 'header' as const, name: 'x-api-key', type: 'apiKey' as const }];
 
 describe('Business SDK client configuration', () => {
-  afterEach(() => {
-    orvelt({ apiKey: 'ov_test_reset' });
-  });
-
-  it('uses orvelt as the shared-client configuration entry point', () => {
-    expect(configureBusinessSdk).toBe(orvelt);
-  });
-
   it('applies the v1 base URL and x-api-key authentication', async () => {
     let capturedRequest: Request | undefined;
-    const client = createBusinessClient({
+    const client = createOrveltClient({
       apiKey: '  ov_test_key  ',
       baseUrl: 'https://example.test/v1/',
       fetch: (async (input: URL | RequestInfo) => {
@@ -34,37 +27,18 @@ describe('Business SDK client configuration', () => {
     expect(capturedRequest?.headers.has('authorization')).toBe(false);
   });
 
-  it('replaces supported shared options without retaining credentials, headers or fetch', () => {
-    const previousFetch = (async (_input: URL | RequestInfo) => Response.json({})) as typeof fetch;
-    orvelt({
-      apiKey: 'old-key',
-      baseUrl: 'https://old.example/v1',
-      headers: { 'x-api-key': 'old-header-key', 'x-tenant': 'previous' },
-      fetch: previousFetch,
-      throwOnError: true,
-    });
-    const configured = orvelt({ apiKey: 'new-key' }).getConfig();
-    expect(configured.baseUrl).toBe('https://api.orvelt.com/v1');
-    expect(configured.fetch).toBeUndefined();
-    expect(configured.throwOnError).toBe(false);
-    expect(new Headers(configured.headers as Headers).has('x-tenant')).toBe(false);
-    expect(new Headers(configured.headers as Headers).has('x-api-key')).toBe(false);
-    expect(typeof configured.auth).toBe('function');
-  });
-
   it('uses apiKey rather than a conflicting client header and keeps clients isolated', async () => {
     const requests: Request[] = [];
     const fetch = (async (request: Request) => {
       requests.push(request);
       return Response.json({});
     }) as typeof globalThis.fetch;
-    const first = createBusinessClient({
+    const first = createOrveltClient({
       apiKey: 'first',
       fetch,
       headers: { 'X-API-KEY': 'stale' },
     });
-    const second = createBusinessClient({ apiKey: 'second', fetch });
-    orvelt({ apiKey: 'shared' });
+    const second = createOrveltClient({ apiKey: 'second', fetch });
     await Promise.all([
       first.get({ url: '/test', security: apiKeySecurity }),
       second.get({ url: '/test', security: apiKeySecurity }),
@@ -73,12 +47,6 @@ describe('Business SDK client configuration', () => {
       'first',
       'second',
     ]);
-  });
-
-  it('does not partially reconfigure the shared client on invalid input', () => {
-    const shared = orvelt({ apiKey: 'existing', headers: { 'x-tenant': 'retained' } });
-    expect(() => orvelt({ apiKey: 'invalid', baseUrl: 'ftp://example.com' })).toThrow(TypeError);
-    expect(new Headers(shared.getConfig().headers as Headers).get('x-tenant')).toBe('retained');
   });
 
   for (const baseUrl of [
@@ -92,7 +60,7 @@ describe('Business SDK client configuration', () => {
     'https://example.com/v1#fragment',
   ]) {
     it(`rejects unsafe or malformed baseUrl ${JSON.stringify(baseUrl)}`, () => {
-      expect(() => createBusinessClient({ apiKey: 'test', baseUrl })).toThrow(TypeError);
+      expect(() => createOrveltClient({ apiKey: 'test', baseUrl })).toThrow(TypeError);
     });
   }
 
@@ -102,15 +70,29 @@ describe('Business SDK client configuration', () => {
     [' https://example.test/v1/// ', 'https://example.test/v1/test'],
   ]) {
     it(`normalizes baseUrl ${JSON.stringify(baseUrl)}`, () => {
-      expect(createBusinessClient({ apiKey: 'test', baseUrl }).buildUrl({ url: '/test' })).toBe(
+      expect(createOrveltClient({ apiKey: 'test', baseUrl }).buildUrl({ url: '/test' })).toBe(
         expected,
       );
     });
   }
 
   it('rejects blank credentials before issuing a request', () => {
-    expect(() => createBusinessClient({ apiKey: '   ' })).toThrow(
+    expect(() => createOrveltClient({ apiKey: '   ' })).toThrow(
       'apiKey must be a non-empty string.',
     );
+    expect(() => new Orvelt('')).toThrow('apiKey must be a non-empty string.');
+  });
+
+  it('takes the API key alone and authenticates with it against the default API', async () => {
+    const requests: Request[] = [];
+    const fetch = (async (input: URL | RequestInfo, init?: RequestInit) => {
+      requests.push(new Request(input, init));
+      return Response.json({ total: 0, delta: 0 });
+    }) as typeof globalThis.fetch;
+    await new Orvelt(' ov_test_string ').subscribers.count({ projectId: 'test' }, { fetch });
+
+    expect(requests.map((request) => [request.url, request.headers.get('x-api-key')])).toEqual([
+      ['https://api.orvelt.com/v1/project/test/subscribers/count', 'ov_test_string'],
+    ]);
   });
 });

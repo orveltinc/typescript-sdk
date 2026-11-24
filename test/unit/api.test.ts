@@ -1,27 +1,25 @@
 import { describe, expect, it } from 'bun:test';
-import {
-  answers,
-  opinions,
-  link,
-  project,
-  qr,
-  questions,
-  subscribers,
-  useProject,
-} from '../../src/index.ts';
+import { Orvelt } from '../../src/index.ts';
 import * as sdk from '../../src/index.ts';
-import { createBusinessClient } from '../../src/config.ts';
 
 const projectId = '00000000-0000-0000-0000-000000000000';
 
-function expectFunctions(value: Record<string, unknown>, keys: string[]) {
-  expect(Object.keys(value)).toEqual(keys);
-  for (const key of keys) {
-    expect(value[key]).toEqual(expect.any(Function));
-  }
+/** A fetch that records each request and answers with `body`. */
+function recordingFetch(body: unknown = {}) {
+  const requests: Request[] = [];
+  const fetch = (async (input: URL | RequestInfo, init?: RequestInit) => {
+    requests.push(new Request(input, init));
+    return Response.json(body);
+  }) as typeof globalThis.fetch;
+  return { requests, fetch };
 }
 
-describe('grouped Business SDK API', () => {
+function expectMethods(group: object, names: string[]) {
+  for (const name of names)
+    expect((group as Record<string, unknown>)[name], name).toEqual(expect.any(Function));
+}
+
+describe('Business SDK', () => {
   it('exports the keyless embed helpers and full configuration from the base SDK', async () => {
     const browser = await import('../../src/browser.ts');
     expect(sdk.orveltEmbed).toBe(browser.orveltEmbed);
@@ -39,7 +37,7 @@ describe('grouped Business SDK API', () => {
       'http://localhost:3000/embed/opinion/01920000-0000-7000-8000-000000000001?visibility=public',
     );
   });
-  it('does not export retired REST operations', () => {
+  it('exposes one client class and none of the retired entry points', () => {
     for (const name of [
       'goals',
       'tags',
@@ -63,107 +61,87 @@ describe('grouped Business SDK API', () => {
       'preverifiedLinksResend',
       'qrCodes',
       'qrCodesDisplay',
+      'orvelt',
+      'configureBusinessSdk',
+      'createBusinessClient',
+      'businessClient',
+      'useProject',
+      'project',
+      'questions',
+      'link',
+      'qr',
+      'opinions',
+      'answers',
+      'subscribers',
+      'linkCreate',
+      'opinionsList',
+      'OrveltSdk',
     ]) {
       expect(sdk).not.toHaveProperty(name);
     }
-    for (const name of ['preverifiedLinks', 'qrCodes', 'preverification']) {
-      expect(useProject(projectId)).not.toHaveProperty(name);
-      expect(project).not.toHaveProperty(name);
-    }
-    expect(useProject(projectId)).not.toHaveProperty('goals');
-    expect(useProject(projectId)).not.toHaveProperty('tags');
-    expect(subscribers).not.toHaveProperty('block');
+    const orvelt = new Orvelt('ov_test_key');
+    for (const name of ['preverifiedLinks', 'qrCodes', 'preverification', 'goals', 'tags'])
+      expect(orvelt).not.toHaveProperty(name);
+    expect(orvelt.subscribers).not.toHaveProperty('block');
   });
 
   it('exposes every operation under its resource', () => {
-    const { versions, ...questionOperations } = questions;
-    expectFunctions(questionOperations, ['list', 'create', 'update', 'delete']);
-    expectFunctions(versions, ['create']);
-    expectFunctions(link, ['list', 'create', 'resend']);
-    expectFunctions(qr, ['display']);
-    expectFunctions(opinions, ['list']);
-    expectFunctions(answers, ['list']);
-    expectFunctions(subscribers, ['count', 'invite']);
+    const orvelt = new Orvelt('ov_test_key');
+    expectMethods(orvelt.questions, ['list', 'create', 'update', 'delete']);
+    expectMethods(orvelt.questions.versions, ['create']);
+    expectMethods(orvelt.link, ['list', 'create', 'resend']);
+    expectMethods(orvelt.qr, ['display']);
+    expectMethods(orvelt.opinions, ['list']);
+    expectMethods(orvelt.answers, ['list']);
+    expectMethods(orvelt.subscribers, ['count', 'invite']);
   });
 
-  it('keeps project groups as a compatibility alias', () => {
-    expect(project.questions).toBe(questions);
-    expect(project.link).toBe(link);
-    expect(project.qr).toBe(qr);
-    expect(project.opinions).toBe(opinions);
-    expect(project.answers).toBe(answers);
-    expect(project.subscribers).toBe(subscribers);
-  });
-
-  it('creates a project-scoped facade without project parameters', () => {
-    const scopedProject = useProject(projectId);
-
-    const { versions, ...questionOperations } = scopedProject.questions;
-    expectFunctions(questionOperations, ['list', 'create', 'update', 'delete']);
-    expectFunctions(versions, ['create']);
-    expectFunctions(scopedProject.link, ['list', 'create', 'resend']);
-    expectFunctions(scopedProject.qr, ['display']);
-    expectFunctions(scopedProject.opinions, ['list']);
-    expectFunctions(scopedProject.answers, ['list']);
-    expectFunctions(scopedProject.subscribers, ['count', 'invite']);
-  });
-
-  it('passes flattened project parameters to the generated operation', async () => {
-    let capturedRequest: Request | undefined;
-    const client = createBusinessClient({
-      apiKey: 'ov_test_key',
-      baseUrl: 'https://example.test/v1',
-      fetch: (async (input: URL | RequestInfo, init?: RequestInit) => {
-        capturedRequest = new Request(input, init);
-        return Response.json({
-          opinions: [],
-          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
-        });
-      }) as typeof fetch,
+  it('sends flat parameters to the route, query and body they belong to', async () => {
+    const { requests, fetch } = recordingFetch({
+      opinions: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
     });
+    const orvelt = new Orvelt({ apiKey: 'ov_test_key', baseUrl: 'https://example.test/v1', fetch });
 
-    const result = await opinions.list({ projectId, page: 1, limit: 10 }, { client });
+    const result = await orvelt.opinions.list({ projectId, page: 1, limit: 10 });
+    await orvelt.subscribers.invite({
+      projectId,
+      subscribers: [{ name: 'Alex', email: 'alex@example.com' }],
+    });
 
     expect(result.data?.opinions).toEqual([]);
-    expect(capturedRequest?.method).toBe('GET');
-    expect(capturedRequest?.url).toBe(
-      `https://example.test/v1/project/${projectId}/opinions?page=1&limit=10`,
-    );
+    expect(requests.map((request) => [request.method, request.url])).toEqual([
+      ['GET', `https://example.test/v1/project/${projectId}/opinions?page=1&limit=10`],
+      ['POST', `https://example.test/v1/project/${projectId}/subscribers/invite`],
+    ]);
+    expect(await requests[1]?.clone().json()).toEqual({
+      subscribers: [{ name: 'Alex', email: 'alex@example.com' }],
+    });
   });
 
-  it('injects the project ID into scoped operations', async () => {
-    let capturedRequest: Request | undefined;
-    const client = createBusinessClient({
-      apiKey: 'ov_test_key',
-      baseUrl: 'https://example.test/v1',
-      fetch: (async (input: URL | RequestInfo, init?: RequestInit) => {
-        capturedRequest = new Request(input, init);
-        return Response.json({
-          invited: [{ name: 'Alex', email: 'alex@example.com' }],
-          skipped: [],
-          invitationAllowance: {
-            used: 1,
-            limit: 100,
-            remaining: 99,
-            resetsAt: '2026-10-16T00:00:00.000Z',
-          },
-        });
-      }) as typeof fetch,
-    });
+  it('keeps each instance on its own key, so one process can serve several organizations', async () => {
+    const { requests, fetch } = recordingFetch();
+    const first = new Orvelt({ apiKey: 'ov_first', fetch });
+    const second = new Orvelt('ov_second');
 
-    const scopedProject = useProject(projectId);
-    const result = await scopedProject.subscribers.invite(
-      { subscribers: [{ name: 'Alex', email: 'alex@example.com' }] },
-      { client },
-    );
+    await Promise.all([
+      first.link.create({
+        projectId,
+        email: 'alex@example.com',
+        firstName: 'Alex',
+        purchase: { provider: 'stripe', customerId: 'cus_Nffrfeu8E2mW3A' },
+      }),
+      second.subscribers.count({ projectId }, { fetch }),
+    ]);
 
-    expect(result.error).toBeUndefined();
-    expect(capturedRequest?.method).toBe('POST');
-    expect(capturedRequest?.url).toBe(
-      `https://example.test/v1/project/${projectId}/subscribers/invite`,
-    );
-    expect(await capturedRequest?.clone().json()).toEqual({
-      subscribers: [{ name: 'Alex', email: 'alex@example.com' }],
+    expect(
+      requests.map((request) => [request.method, request.url, request.headers.get('x-api-key')]),
+    ).toEqual([
+      ['POST', `https://api.orvelt.com/v1/project/${projectId}/link`, 'ov_first'],
+      ['GET', `https://api.orvelt.com/v1/project/${projectId}/subscribers/count`, 'ov_second'],
+    ]);
+    expect(await requests[0]?.clone().json()).toMatchObject({
+      purchase: { provider: 'stripe', customerId: 'cus_Nffrfeu8E2mW3A' },
     });
   });
 });

@@ -133,75 +133,66 @@ Use your agent's supported skills directory if it differs. Copy them again after
 
 Tools can also locate a bundled skill with `import.meta.resolve('@orvelt/business/skills/orvelt-business-sdk/SKILL.md')`. Read the resolved file as Markdown; it is not a JavaScript module.
 
-## Configure once
+## Create a client
 
 In Orvelt Business, open your organization's **API keys** page and create a key. Copy the secret when it is shown; you cannot view it again. Store it in your server's environment as `ORVELT_BUSINESS_API_KEY`, not in browser code or source control. CLI browser login does not configure SDK credentials.
 
 ```ts
-import { orvelt, opinions } from '@orvelt/business';
+import { Orvelt } from '@orvelt/business';
 
-orvelt({ apiKey: process.env.ORVELT_BUSINESS_API_KEY! });
+const orvelt = new Orvelt(process.env.ORVELT_BUSINESS_API_KEY!);
 
-const result = await opinions.list({
+const { data, error } = await orvelt.opinions.list({
   projectId: 'PROJECT_UUID',
   page: 1,
   limit: 20,
 });
 
-if (result.error) throw new Error(result.error.message);
-console.log({ count: result.data.opinions.length });
+if (error) throw new Error(error.message);
+console.log({ count: data.opinions.length });
 ```
 
-Grouped operations use a flat parameter object, so project-scoped calls pass `projectId` alongside query or body fields. For example, use `opinions.list({ projectId, page, limit })` or `link.resend({ projectId, id })`.
+Every method takes a flat parameter object, so project-scoped calls pass `projectId` alongside query or body fields, for example `orvelt.opinions.list({ projectId, page, limit })` or `orvelt.link.resend({ projectId, id })`. An optional second argument sets per-request options such as `headers`, `signal`, or `throwOnError`.
 
-The SDK contains exactly 12 selected REST operations:
+The SDK contains exactly 13 selected REST operations:
 
-| Group         | Methods                              |
-| ------------- | ------------------------------------ |
-| `questions`   | `list`, `create`, `update`, `delete` |
-| `link`        | `list`, `create`, `resend`           |
-| `qr`          | `display` (rotating only)            |
-| `opinions`    | `list`                               |
-| `answers`     | `list`                               |
-| `subscribers` | `count`, `invite`                    |
+| Group                | Methods                              |
+| -------------------- | ------------------------------------ |
+| `questions`          | `list`, `create`, `update`, `delete` |
+| `questions.versions` | `create`                             |
+| `link`               | `list`, `create`, `resend`           |
+| `qr`                 | `display` (rotating only)            |
+| `opinions`           | `list`                               |
+| `answers`            | `list`                               |
+| `subscribers`        | `count`, `invite`                    |
 
 `openapi.json` covers only these SDK methods. For the full REST API and its authentication requirements, see the [HTTP API reference](https://resource.orvelt.com/docs/api-reference).
 
 Opinions and answers support `query`, inclusive millisecond `dateFrom`/`dateTo`, exact `externalUserId`, sorting, and pagination. Opinions also support `opinionId`, `visibility`, and `replyStatus` (`all`, `replied`, or `unreplied`); answers support `responseId`, `questionId`, and `responseVisibility`. Answers belong to submitted responses and do not require an opinion. Each list returns only its own resource, with no `resource` selector. Filters combine before pagination. References are unverified metadata, not proof of identity. CSV downloads remain first-party, session-only export operations rather than public SDK methods.
 
-The default base URL is `https://api.orvelt.com/v1`. Override it for staging or a local proxy:
+The default base URL is `https://api.orvelt.com/v1`. Pass an options object (`OrveltOptions`) to override it for staging or a local proxy, or to set `headers`, a custom `fetch`, or `throwOnError`:
 
 ```ts
-orvelt({
+import { Orvelt } from '@orvelt/business';
+
+const orvelt = new Orvelt({
   apiKey: process.env.ORVELT_BUSINESS_API_KEY!,
   baseUrl: 'https://staging-api.example.com/v1',
 });
 ```
 
-Use `createBusinessClient()` when clients need separate credentials or base URLs, then pass it as the second argument to an operation. Prefer isolated clients in servers handling multiple tenants: do not reconfigure the shared client per request. Calling `orvelt()` again replaces its supported options, including headers, custom fetch and error mode. The `apiKey` option takes precedence over an `x-api-key` supplied in client headers.
+Base URLs must be HTTP(S) URLs without credentials, queries or fragments. Root-relative proxy paths such as `/v1` are browser-only; Node and Bun need an absolute URL. The `apiKey` option always supplies the credential; an `x-api-key` in `headers` is ignored. Never include Business API keys in frontend code; use the keyless embed helpers there.
 
-Base URLs must be HTTP(S) URLs without credentials, queries or fragments. Root-relative proxy paths such as `/v1` are browser-only; Node and Bun need an absolute URL. Never include Business API keys in frontend code; use the keyless embed helpers there.
-
-```ts
-import { createBusinessClient, opinions } from '@orvelt/business';
-
-const client = createBusinessClient({ apiKey: 'ov_example' });
-const result = await opinions.list({ projectId: 'PROJECT_UUID' }, { client });
-```
-
-For repeated calls against one project, use `useProject()` to bind the project ID once:
+Each instance keeps its own credentials and options. For several organizations, tenants or environments, create one instance for each:
 
 ```ts
-import { useProject } from '@orvelt/business';
+import { Orvelt } from '@orvelt/business';
 
-const project = useProject('PROJECT_UUID');
-const result = await project.opinions.list({
-  externalUserId: 'customer-42',
-  visibility: 'public',
-});
+const storeA = new Orvelt(process.env.STORE_A_ORVELT_BUSINESS_API_KEY!);
+const storeB = new Orvelt(process.env.STORE_B_ORVELT_BUSINESS_API_KEY!);
+
+const { data, error } = await storeB.opinions.list({ projectId: 'PROJECT_UUID' });
 ```
-
-`useProject()` is a plain factory and does not require React. Pass per-request options, including a custom client, as the operation's second argument.
 
 JSON responses are validated with generated Zod schemas. SDK calls return `{ data, error, request, response }` by default; set `throwOnError: true` in the client options if errors should throw instead. For success-only TypeScript inference, also pass `throwOnError: true` per call. HTTP failures retain the server's error payload; network, cancellation, JSON parsing and validation failures may instead be native errors or `ZodError`. Check errors as `unknown` before reading API-specific fields. `request` and `response` can be absent on failures.
 
